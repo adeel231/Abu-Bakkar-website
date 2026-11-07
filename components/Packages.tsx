@@ -93,7 +93,7 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
 /** The three age groups, shown before enrollment. */
 export function AgeGroups({ c }: { c: Catalog }) {
   return (
-    <section id="age-groups" className="bg-white text-navy">
+    <section id="age-groups" className="bg-slate-50 text-navy">
       <div className="section">
         <h2 className="h2 text-center">Age Groups</h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Every child learns with children of a similar age. Boys and girls can both enroll.</p>

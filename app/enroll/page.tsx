@@ -3,7 +3,7 @@ import { Logo } from "@/components/Brand";
 import Tracker from "@/components/Tracker";
 import EnrollWizard from "./EnrollWizard";
 import { getCatalog, getSettings } from "@/lib/db";
-import { WHATSAPP } from "@/lib/contact";
+import { WHATSAPP, WHATSAPP_PRETTY } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Enroll — Abu Bakkar Academy" };
@@ -26,7 +26,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
         {/* Display prices from the built-in fallback are never used for checkout. */}
         {!c.fromDb || programs.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Assalamu Alaikum, I want to enroll my child.")}`} className="btn-emerald">Enroll on WhatsApp</a>
+            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Assalamu Alaikum, I want to enroll my child.")}`} className="btn-emerald">Enroll on WhatsApp: {WHATSAPP_PRETTY}</a>
             <Link href="/" className="btn mt-2 text-navy underline">Back to home</Link>
           </div>
         ) : (

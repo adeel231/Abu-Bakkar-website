@@ -5,15 +5,15 @@ import { Facebook, Instagram } from "lucide-react";
 
 const COLS: { title: string; links: [string, string][] }[] = [
   { title: "Programs", links: [["Character Grooming", "/#programs"], ["Academic Tuition", "/#programs"], ["Enroll Now", "/enroll"]] },
-  { title: "Academy", links: [["Why Abu Bakkar Academy", "/#why"], ["Character Development", "/#qualities"], ["The Parent Promise", "/#promise"], ["How It Works", "/#journey"]] },
+  { title: "Academy", links: [["Character Development", "/#qualities"], ["The Parent Promise", "/#promise"], ["How It Works", "/#journey"]] },
   { title: "Support", links: [["FAQs", "/#faq"], ["Privacy Policy", "/privacy"], ["Refund Policy", "/refund-policy"], ["Terms of Enrollment", "/terms"]] },
 ];
 
 export default function Footer() {
   const wa = WHATSAPP;
   const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL;
-  const fb = process.env.NEXT_PUBLIC_FACEBOOK_URL;
-  const ig = process.env.NEXT_PUBLIC_INSTAGRAM_URL;
+  const fb = process.env.NEXT_PUBLIC_FACEBOOK_URL || "https://www.facebook.com/share/183vzkYTJP/";
+  const ig = process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/abubakkaracademy/";
   const pretty = WHATSAPP_PRETTY;
   return (
     <footer className="border-t border-slate-200 bg-white text-slate-600">

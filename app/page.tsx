@@ -1,6 +1,6 @@
 import Footer from "@/components/Footer";
 import Tracker, { EnrollLink } from "@/components/Tracker";
-import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, CalendarCheck, MessagesSquare, GraduationCap, Check, TrendingUp, Sprout, Video, ClipboardList, type LucideIcon } from "lucide-react";
+import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, CalendarCheck, MessagesSquare, GraduationCap, TrendingUp, Sprout, Video, ClipboardList, type LucideIcon } from "lucide-react";
 import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
 import { AgeGroups, CharacterPackages } from "@/components/Packages";
@@ -13,15 +13,15 @@ import { WHATSAPP } from "@/lib/contact";
 export const dynamic = "force-dynamic";
 
 const QUALITIES: [LucideIcon, string, string][] = [
-  [HeartHandshake, "Respect for Parents", "Walidain ki izzat, ita’at aur shukr guzaari sikhaate hain."],
+  [HeartHandshake, "Respect for Parents", "Walidain ki izzat ita’at aur shukr guzaari sikhaate hain."],
   [ShieldCheck, "Honesty", "Sach bolne aur imandaari se jeene ki adat daalte hain."],
-  [Hourglass, "Patience", "Sabr, bardasht aur mushkilat mein itminaan sikhaate hain."],
-  [HandHeart, "Kindness", "Dusron ke liye mohabbat, reham aur madad ka jazba paida karte hain."],
+  [Hourglass, "Patience", "Sabr bardasht aur mushkilat mein itminaan sikhaate hain."],
+  [HandHeart, "Kindness", "Dusron ke liye mohabbat reham aur madad ka jazba paida karte hain."],
   [Landmark, "Islamic Values", "Qur’an aur Sunnah ki roshni mein zindagi ke bunyadi usool sikhaate hain."],
-  [Star, "Confidence", "Positive soch, khud par aitmaad aur behtar andaaz-e-bayaan paida karte hain."],
-  [CalendarCheck, "Discipline", "Waqt ki qadr, zimmedaari aur behtareen aadaton ki tarbiyat karte hain."],
-  [MessagesSquare, "Communication Skills", "Adab ke saath baat karna, apni baat wazeh taur par rakhna sikhaate hain."],
-  [GraduationCap, "Academic Excellence", "Behtar learning habits, focus aur mehnat se nathayaj hasil karne ki rahnumai karte hain."],
+  [Star, "Confidence", "Positive soch khud par aitmaad aur behtar andaaz-e-bayaan paida karte hain."],
+  [CalendarCheck, "Discipline", "Waqt ki qadr zimmedaari aur behtareen aadaton ki tarbiyat karte hain."],
+  [MessagesSquare, "Communication Skills", "Adab ke saath baat karna aur apni baat wazeh taur par rakhna sikhaate hain."],
+  [GraduationCap, "Academic Excellence", "Behtar learning habits focus aur mehnat se nathayaj hasil karne ki rahnumai karte hain."],
 ];
 
 const JOURNEY = [
@@ -112,22 +112,10 @@ export default async function Home() {
       {/* 4. PACKAGES + AGE GROUPS (primary service) */}
       <CharacterPackages c={c} wa={WHATSAPP} />
 
-      {/* WHY (below the prices) */}
-      <section id="why" className="bg-slate-50 text-navy"><div className="section">
-        <h2 className="h2 text-center">Why Abu Bakkar Academy?</h2>
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {["Character grooming", "Islamic manners and values", "Academic tuition", "Confidence building", "Communication skills", "Emotional intelligence"].map((t) => (
-            <li key={t} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-medium text-navy shadow-sm">
-              <Check size={18} className="shrink-0 text-gold" />{t}
-            </li>
-          ))}
-        </ul>
-      </div></section>
-
       <AgeGroups c={c} />
 
       {/* TEACHERS */}
-      <section className="bg-slate-50 text-navy">
+      <section className="bg-white text-navy">
         <div className="section">
           <h2 className="h2 text-center">Taught by Qualified, Verified Teachers</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
