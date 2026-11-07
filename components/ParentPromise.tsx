@@ -1,0 +1,65 @@
+"use client";
+import { Heart, HeartHandshake, Facebook, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { adEvent } from "./Analytics";
+import { myReferralCode, track } from "./Tracker";
+
+export default function ParentPromise({ text }: { text: string }) {
+  const [supported, setSupported] = useState(false);
+  const [url, setUrl] = useState("https://abubakkaracademy.pk");
+
+  useEffect(() => {
+    try { setSupported(localStorage.getItem("aba_promise") === "1"); } catch {}
+    setUrl(`${location.origin}/?rf=${myReferralCode()}&utm_source=share`);
+  }, []);
+
+  // Message + link only. Never include any enrollment or child information.
+  const msg = `“${text}”\n\nAbu Bakkar Academy — Sirf Taleem Nahi, Tarbiyat Bhi.\n${url}`;
+
+  function support() {
+    if (supported) return;
+    setSupported(true);
+    try { localStorage.setItem("aba_promise", "1"); } catch {}
+    track("promise_support");
+    adEvent("PromiseSupport");
+  }
+  function wa() {
+    track("share_whatsapp"); adEvent("Share", { method: "whatsapp" });
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+  }
+  function fb() {
+    track("share_facebook"); adEvent("Share", { method: "facebook" });
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, "_blank", "noopener");
+  }
+
+  return (
+    <section id="promise" className="relative isolate overflow-hidden bg-[#fdf2e7] text-[#0b3d2c]">
+      {/* Photo: right side on desktop, strip under the content on mobile. Its left edge fades into the cream. */}
+      <div role="img" aria-label="A mother with her arm around her son, looking toward a mosque at sunset"
+        className="promise-photo h-64 w-full bg-cover bg-[position:70%_30%] md:absolute md:inset-y-0 md:right-0 md:-z-10 md:h-auto md:w-[52%] md:bg-[position:right_center]"
+        style={{ backgroundImage: "url(/parent-promise.png)" }} />
+
+      <div className="mx-auto grid max-w-6xl px-5 pb-8 pt-16 md:grid-cols-[1.1fr_0.9fr] md:py-20">
+        <div className="text-center">
+          <HeartHandshake size={56} strokeWidth={1.75} className="mx-auto text-gold" />
+          <h2 className="mt-3 font-serif text-4xl font-bold text-[#0b3d2c] md:text-5xl">The Parent Promise</h2>
+          <blockquote className="mx-auto mt-8 max-w-lg font-serif text-3xl font-bold leading-snug text-[#0b3d2c] md:text-4xl">
+            “{text}”
+          </blockquote>
+          <div className="mx-auto mt-6 h-0.5 w-56 bg-gradient-to-r from-transparent via-gold to-transparent" />
+
+          <div className="mx-auto mt-8 flex max-w-md flex-col gap-3">
+            <button onClick={support} className="btn w-full bg-[#0b5a3e] text-lg text-white shadow-lg hover:brightness-110">
+              <Heart size={20} className="mr-2" fill="currentColor" />{supported ? "Thank you for your promise" : "I Support This Promise"}
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={wa} className="btn bg-[#1f9a4d] !px-3 text-white shadow-lg hover:brightness-110"><Send size={18} className="mr-2 shrink-0" />Share on WhatsApp</button>
+              <button onClick={fb} className="btn bg-[#1b6fe0] !px-3 text-white shadow-lg hover:brightness-110"><Facebook size={18} className="mr-2 shrink-0" />Share on Facebook</button>
+            </div>
+          </div>
+        </div>
+        <div className="hidden md:block" />
+      </div>
+    </section>
+  );
+}

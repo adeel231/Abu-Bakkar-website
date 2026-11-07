@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html { scroll-behavior: smooth; }
+body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.urdu { font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif; }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center rounded-full px-6 py-3 font-semibold transition focus:outline-none focus-visible:ring-4 ring-gold/40; }
+  .btn-gold { @apply btn bg-gold text-navy hover:brightness-95 shadow-lg shadow-gold/30; }
+  .btn-emerald { @apply btn bg-emerald text-white hover:bg-emerald-700; }
+  .btn-outline { @apply btn border-2 border-white/70 text-white hover:bg-white/10; }
+  .input { @apply w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base focus:border-emerald focus:outline-none focus:ring-4 ring-emerald/20; }
+  .label { @apply mb-1 block text-sm font-medium text-navy; }
+  .section { @apply mx-auto max-w-6xl px-5 py-16 md:py-20; }
+  .h2 { @apply font-serif text-3xl md:text-4xl font-bold text-navy; }
+}
+
+/* Program photo: fades at the bottom when stacked (phones/tablets), at the right edge on wide screens. */
+.prog-photo {
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+}
+@media (min-width: 1024px) {
+  .prog-photo {
+    -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+    mask-image: linear-gradient(to right, #000 70%, transparent 100%);
+  }
+}
+
+
+.promise-photo {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 30%);
+}
+@media (min-width: 768px) {
+  .promise-photo {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 38%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 38%);
+  }
+}
+
+.hero-photo {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 30%);
+}
+@media (min-width: 768px) {
+  .hero-photo {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 40%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 40%);
+  }
+}
