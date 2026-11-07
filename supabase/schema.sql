@@ -456,8 +456,7 @@ insert into settings(key, value) values
  ('whatsapp_joining_text', 'Class joining link and timings will be sent on WhatsApp before your first class.'),
  ('ad_spend_pkr', '0'),
  ('hero_hook', 'Abu Bakkar Ne Sab Ka Dil Kyun Jeeta?'),
- ('hero_sub', 'Sirf Uski Taleem Ki Wajah Se Nahi
-Uske Khoobsurat Akhlaaq Ki Wajah Se'),
+ ('hero_sub', E'Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Kirdar Aur Akhlaq Ki Wajah Se'),
  ('promise_text', 'I promise to focus on my child''s character as much as their education.'),
  ('limited_seats_threshold', '10'),
  ('timing_options', 'Morning (9 AM – 12 PM)
@@ -469,10 +468,12 @@ on conflict do nothing;
 -- Replace OLD default hero text with the current design's text and the old placeholder payment text — only if they were never edited.
 update settings set value = 'Abu Bakkar Ne Sab Ka Dil Kyun Jeeta?' where key = 'hero_hook'
   and value in ('Abu Bakar Ne Sab Ka Dil Kyun Jeeta?', 'Abu Bakkar Jaisa Khoobsurat Akhlaaq');
-update settings set value = 'Sirf Uski Taleem Ki Wajah Se Nahi
-Uske Khoobsurat Akhlaaq Ki Wajah Se' where key = 'hero_sub'
-  and (value like 'Sirf Uski Taleem Ki Wajah Se Nahi!%' or value = 'Har Betay Aur Beti Ke Liye
-Sirf Taleem Nahi Tarbiyat Bhi');
+-- (line breaks are compared without \r, so it works whatever line endings the script was saved with)
+update settings set value = E'Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Kirdar Aur Akhlaq Ki Wajah Se' where key = 'hero_sub'
+  and (value like 'Sirf Uski Taleem Ki Wajah Se Nahi!\\n%'
+       or replace(value, chr(13), '') in (E'Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Khoobsurat Akhlaaq Ki Wajah Se!',
+                                          E'Har Betay Aur Beti Ke Liye\nSirf Taleem Nahi Tarbiyat Bhi',
+                                          E'Sirf Uski Taleem Ki Wajah Se Nahi\nUske Khoobsurat Akhlaaq Ki Wajah Se'));
 update settings set value = '' where key = 'bank_details' and value like 'Bank: <your bank>%';
 update settings set value = '' where key in ('jazzcash_number', 'easypaisa_number') and value like '03XX-XXXXXXX%';
 

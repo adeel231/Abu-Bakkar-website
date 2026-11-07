@@ -31,7 +31,7 @@ Manual verification is built in. A card/wallet gateway (JazzCash or Easypaisa me
 
 ## Images and logo
 - `public/logo.png` (full) and `public/logo-compact.png` (navbar, footer).
-- Hero: uses the designed banner `public/hero-main.png` (headline and supporting lines are editable in /admin → Settings).
+- Hero: uses the photo `public/hero-boy.jpg` cut from the designed banner (headline and supporting lines are editable in /admin → Settings).
 - Contact number: `lib/contact.ts` (override with `NEXT_PUBLIC_WHATSAPP_NUMBER`).
 
 ## Before running ads

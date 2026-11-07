@@ -53,7 +53,7 @@ test("edited settings survive; untouched old defaults are upgraded; placeholders
   assert.equal(s.bank_details, "My real bank details");
   assert.equal(s.hero_hook, "Custom edited headline");           // admin edit is never overwritten
   assert.equal(s.jazzcash_number, "");                           // old placeholder text removed
-  assert.equal(s.hero_sub, "Sirf Uski Taleem Ki Wajah Se Nahi\nUske Khoobsurat Akhlaaq Ki Wajah Se"); // old default normalised
+  assert.equal(s.hero_sub, "Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Kirdar Aur Akhlaq Ki Wajah Se"); // old default replaced
 });
 
 test("old programs converted: no Founding Batch, both open, correct kinds", async () => {

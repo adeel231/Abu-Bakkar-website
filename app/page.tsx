@@ -36,7 +36,7 @@ const JOURNEY = [
 export default async function Home() {
   const [c, settings] = await Promise.all([getCatalog(), getSettings()]);
   const hook = (settings.hero_hook || "Abu Bakkar Ne Sab Ka Dil Kyun Jeeta?").replace(/!/g, "").replace(/Abu Bakar(?!k)/g, "Abu Bakkar");
-  const sub = (settings.hero_sub || "Sirf Uski Taleem Ki Wajah Se Nahi\nUske Khoobsurat Akhlaaq Ki Wajah Se").replace(/!/g, "").split("\n").map((x) => x.trim()).filter(Boolean);
+  const sub = (settings.hero_sub || "Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Kirdar Aur Akhlaq Ki Wajah Se").split("\n").map((x) => x.trim()).filter(Boolean);
   const promise = settings.promise_text || "I promise to focus on my child's character as much as their education.";
 
   const cg = c.programs.find((p) => p.kind === "character");
@@ -54,7 +54,7 @@ export default async function Home() {
 
       {/* 1. HERO — the designed banner (boy imagining the young man he admires) */}
       <HeroBand
-        as="h1" concept image="/hero-main.png"
+        as="h1" concept image="/hero-boy.jpg"
         alt="A boy at his desk imagines himself as the young man he admires, reading a book"
         hook={hook} sub={sub} badge={limited ? "Limited Seats Available" : undefined}
         pill={<><Sprout size={16} /> Sirf Taleem Nahi, Tarbiyat Bhi <Sprout size={16} className="-scale-x-100" /></>}
