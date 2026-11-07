@@ -26,9 +26,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
         {/* Display prices from the built-in fallback are never used for checkout. */}
         {!c.fromDb || programs.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-            <p className="font-semibold text-navy">Online enrollment is temporarily unavailable.</p>
-            <p className="mt-1 text-slate-600">Please message us on WhatsApp and we will enroll your child right away.</p>
-            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Assalamu Alaikum, I want to enroll my child.")}`} className="btn-emerald mt-4">WhatsApp us</a>
+            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Assalamu Alaikum, I want to enroll my child.")}`} className="btn-emerald">Enroll on WhatsApp</a>
             <Link href="/" className="btn mt-2 text-navy underline">Back to home</Link>
           </div>
         ) : (

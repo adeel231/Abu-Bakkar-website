@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { EnrollLink, track } from "./Tracker";
 import { Logo } from "./Brand";
 
-const NAV = [["#why", "Why Us"], ["#packages", "Packages"], ["#tuition", "Tuition"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
+const NAV = [["#why", "Why Us"], ["#packages", "Packages"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
 const wa = WHATSAPP;
 
 export function AnnouncementBar({ href, limited, price }: { href: string; limited: boolean; price: string }) {

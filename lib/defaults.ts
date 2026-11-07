@@ -25,9 +25,9 @@ export const DEFAULT_PACKAGES: Pkg[] = [
 ];
 
 export const DEFAULT_AGE_GROUPS: AgeGroup[] = [
-  { id: "d-a", code: "A", label: "Group A", min_age: 5, max_age: 8, focus: "Manners, kindness and basic discipline", sort: 1, active: true },
-  { id: "d-b", code: "B", label: "Group B", min_age: 8, max_age: 12, focus: "Respect, patience and confidence", sort: 2, active: true },
-  { id: "d-c", code: "C", label: "Group C", min_age: 12, max_age: 15, focus: "Responsibility, emotional intelligence and leadership", sort: 3, active: true },
+  { id: "d-a", code: "A", label: "Group A", min_age: 5, max_age: 8, focus: "Manners and kindness", sort: 1, active: true },
+  { id: "d-b", code: "B", label: "Group B", min_age: 8, max_age: 12, focus: "Respect and patience", sort: 2, active: true },
+  { id: "d-c", code: "C", label: "Group C", min_age: 12, max_age: 15, focus: "Responsibility and emotional intelligence", sort: 3, active: true },
 ];
 
 export const DEFAULT_SUBJECTS: Subject[] = ["Mathematics", "English", "Urdu", "Science", "Islamiyat", "Computer Science"]

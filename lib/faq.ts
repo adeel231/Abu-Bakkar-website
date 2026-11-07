@@ -20,7 +20,7 @@ export function buildFaq(c: Catalog): [string, string][] {
     ["What is the difference between group and private classes?",
       "In group classes your child learns live with a small group of children of a similar age, every day, 5 days a week. In private classes your child is alone with the teacher for 1 hour, 2 days a week, which suits children who need personal attention or a flexible pace."],
     ["Which age group will my child join?",
-      "Group A is ages 5 to 8 (manners, kindness and basic discipline). Group B is ages 8 to 12 (respect, patience and confidence). Group C is ages 12 to 15 (responsibility, emotional intelligence and leadership). Ages 8 and 12 fit two groups, so you choose one and our team confirms the best placement. Boys and girls can both enroll."],
+      "Group A is ages 5 to 8 (manners and kindness). Group B is ages 8 to 12 (respect and patience). Group C is ages 12 to 15 (responsibility and emotional intelligence). Ages 8 and 12 fit two groups, so you choose one and our team confirms the best placement. Boys and girls can both enroll."],
     ["What are the class schedules?",
       "Classes are live online. When you enroll, tell us your preferred timing: morning, afternoon, evening or night. After your payment is verified we confirm your child's class time and send the joining link on WhatsApp."],
     ["How do I pay?",

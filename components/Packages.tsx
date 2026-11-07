@@ -85,24 +85,6 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
             );
           })}
         </div>
-
-        {/* Group vs Private at a glance */}
-        <div className="mt-10 overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-left text-sm">
-            <caption className="bg-slate-50 p-3 text-left font-bold text-navy">Group or Private? The difference at a glance</caption>
-            <thead><tr className="bg-navy text-white"><th className="p-3"></th><th className="p-3">Online Group</th><th className="p-3">Private One-on-One</th></tr></thead>
-            <tbody className="divide-y divide-slate-100">
-              {([
-                ["Who is in class", "A small group of similar-age children", "Only your child and the teacher"],
-                ["Schedule", "1 hour daily, 5 days a week", "1 hour per session, 2 days a week"],
-                ["Monthly fee", formatPKR(monthlyPackage(c.packages, prog.id, "group")?.price_pkr ?? 0), formatPKR(monthlyPackage(c.packages, prog.id, "private")?.price_pkr ?? 0)],
-                ["Best for", "Confidence, teamwork and daily routine", "Personal attention and a flexible pace"],
-              ]).map(([k, a, b]) => (
-                <tr key={k}><th scope="row" className="p-3 font-semibold text-navy">{k}</th><td className="p-3 text-slate-700">{a}</td><td className="p-3 text-slate-700">{b}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
     </section>
   );
@@ -111,7 +93,7 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
 /** The three age groups, shown before enrollment. */
 export function AgeGroups({ c }: { c: Catalog }) {
   return (
-    <section id="age-groups" className="bg-slate-50 text-navy">
+    <section id="age-groups" className="bg-white text-navy">
       <div className="section">
         <h2 className="h2 text-center">Age Groups</h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Every child learns with children of a similar age. Boys and girls can both enroll.</p>

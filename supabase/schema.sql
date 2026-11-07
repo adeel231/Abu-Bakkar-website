@@ -477,10 +477,14 @@ update settings set value = '' where key = 'bank_details' and value like 'Bank: 
 update settings set value = '' where key in ('jazzcash_number', 'easypaisa_number') and value like '03XX-XXXXXXX%';
 
 insert into age_groups(code, label, min_age, max_age, focus, sort) values
- ('A', 'Group A', 5, 8,  'Manners, kindness and basic discipline', 1),
- ('B', 'Group B', 8, 12, 'Respect, patience and confidence', 2),
- ('C', 'Group C', 12, 15, 'Responsibility, emotional intelligence and leadership', 3)
+ ('A', 'Group A', 5, 8,  'Manners and kindness', 1),
+ ('B', 'Group B', 8, 12, 'Respect and patience', 2),
+ ('C', 'Group C', 12, 15, 'Responsibility and emotional intelligence', 3)
 on conflict (code) do nothing;
+-- Shorten the OLD default focus text to two points each — only if it was never edited in /admin.
+update age_groups set focus = 'Manners and kindness' where focus = 'Manners, kindness and basic discipline';
+update age_groups set focus = 'Respect and patience' where focus = 'Respect, patience and confidence';
+update age_groups set focus = 'Responsibility and emotional intelligence' where focus = 'Responsibility, emotional intelligence and leadership';
 
 insert into subjects(name, sort) values
  ('Mathematics', 1), ('English', 2), ('Urdu', 3), ('Science', 4), ('Islamiyat', 5), ('Computer Science', 6)

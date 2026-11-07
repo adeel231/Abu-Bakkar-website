@@ -3,7 +3,7 @@ import Tracker, { EnrollLink } from "@/components/Tracker";
 import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, CalendarCheck, MessagesSquare, GraduationCap, Check, TrendingUp, Sprout, Video, ClipboardList, type LucideIcon } from "lucide-react";
 import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
-import { AgeGroups, CharacterPackages, TuitionPackages } from "@/components/Packages";
+import { AgeGroups, CharacterPackages } from "@/components/Packages";
 import { AnnouncementBar, FloatingBar, Header } from "@/components/Chrome";
 import { anyLimited, getCatalog, getSettings } from "@/lib/db";
 import { formatPKR, monthlyPackage } from "@/lib/pricing";
@@ -62,17 +62,21 @@ export default async function Home() {
         primary={{ href: enrollHref, label: "ENROLL NOW" }} secondary={{ href: "#programs", label: "View Online Program" }}
       />
 
-      {/* 2. WHY */}
-      <section id="why" className="bg-white text-navy"><div className="section">
-        <h2 className="h2 text-center">Why Abu Bakkar Academy?</h2>
-        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {["Character grooming", "Islamic manners and values", "Academic tuition", "Confidence building", "Communication skills", "Emotional intelligence"].map((t) => (
-            <li key={t} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-medium text-navy shadow-sm">
-              <Check size={18} className="shrink-0 text-gold" />{t}
-            </li>
-          ))}
-        </ul>
-      </div></section>
+      {/* 2. CHARACTER DEVELOPMENT (qualities) */}
+      <section id="qualities" className="bg-white text-[#0a3d2c]">
+        <div className="section text-center">
+          <h2 className="h2">Character Development</h2>
+          <div className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+            {QUALITIES.map(([Icon, name, how]) => (
+              <div key={name} className="flex flex-col items-center last:col-span-2 md:last:col-span-1 rounded-3xl border border-[#e3d8bc] bg-[#fbf7ec] px-3 py-6 text-center shadow-[0_2px_10px_rgba(80,60,10,0.08)] md:px-6 md:py-8">
+                <Icon size={44} strokeWidth={1.75} className="text-[#0b5a3e]" />
+                <h3 className="mt-3 font-serif text-lg font-bold leading-tight text-[#0b5a3e] md:text-2xl">{name}</h3>
+                <p className="mt-2 text-sm leading-snug text-[#2f3b35] md:text-base">{how}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* 3. MAIN PROGRAM BANNER — Character Grooming (scales like the design image on large screens) */}
       <section id="programs" className="relative isolate overflow-hidden bg-gradient-to-br from-[#0b4d37] to-[#052a1f] text-white lg:aspect-[1571/768]">
@@ -107,26 +111,20 @@ export default async function Home() {
 
       {/* 4. PACKAGES + AGE GROUPS (primary service) */}
       <CharacterPackages c={c} wa={WHATSAPP} />
+
+      {/* WHY (below the prices) */}
+      <section id="why" className="bg-slate-50 text-navy"><div className="section">
+        <h2 className="h2 text-center">Why Abu Bakkar Academy?</h2>
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {["Character grooming", "Islamic manners and values", "Academic tuition", "Confidence building", "Communication skills", "Emotional intelligence"].map((t) => (
+            <li key={t} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 font-medium text-navy shadow-sm">
+              <Check size={18} className="shrink-0 text-gold" />{t}
+            </li>
+          ))}
+        </ul>
+      </div></section>
+
       <AgeGroups c={c} />
-
-      {/* 5. QUALITIES */}
-      <section id="qualities" className="bg-white text-[#0a3d2c]">
-        <div className="section text-center">
-          <h2 className="h2">Character Development</h2>
-          <div className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
-            {QUALITIES.map(([Icon, name, how]) => (
-              <div key={name} className="flex flex-col items-center last:col-span-2 md:last:col-span-1 rounded-3xl border border-[#e3d8bc] bg-[#fbf7ec] px-3 py-6 text-center shadow-[0_2px_10px_rgba(80,60,10,0.08)] md:px-6 md:py-8">
-                <Icon size={44} strokeWidth={1.75} className="text-[#0b5a3e]" />
-                <h3 className="mt-3 font-serif text-lg font-bold leading-tight text-[#0b5a3e] md:text-2xl">{name}</h3>
-                <p className="mt-2 text-sm leading-snug text-[#2f3b35] md:text-base">{how}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. ACADEMIC TUITION (second, separate service) */}
-      <TuitionPackages c={c} wa={WHATSAPP} />
 
       {/* TEACHERS */}
       <section className="bg-slate-50 text-navy">
