@@ -1,4 +1,4 @@
-# Abu Bakkar Academy — website and enrollment system
+# Abu Bakkar Academy — website and enrollment system.
 
 Next.js 14 · Tailwind · Supabase · Vercel
 
