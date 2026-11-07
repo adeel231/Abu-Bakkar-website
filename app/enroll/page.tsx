@@ -1,33 +1,46 @@
 import Link from "next/link";
 import { Logo } from "@/components/Brand";
 import Tracker from "@/components/Tracker";
-import EnrollForm from "./EnrollForm";
-import { getPrograms, seatsLeft } from "@/lib/db";
+import EnrollWizard from "./EnrollWizard";
+import { getCatalog, getSettings } from "@/lib/db";
+import { WHATSAPP } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Enroll — Abu Bakkar Academy" };
 
-export default async function EnrollPage({ searchParams }: { searchParams: { program?: string } }) {
-  const all = await getPrograms();
-  const open = all
-    .filter((p) => p.status === "open" && p.price_pkr > 0 && seatsLeft(p) > 0)
-    .map((p) => ({ slug: p.slug, name: p.name, price: p.price_pkr, age: p.age_group, timings: p.timings, seats: seatsLeft(p) }));
+export default async function EnrollPage({ searchParams }: { searchParams: { program?: string; type?: string; term?: string } }) {
+  const [c, settings] = await Promise.all([getCatalog(), getSettings()]);
+  const timingOptions = (settings.timing_options || "Morning (9 AM – 12 PM)\nAfternoon (12 PM – 4 PM)\nEvening (4 PM – 8 PM)\nNight (8 PM – 10 PM)")
+    .split("\n").map((s) => s.trim()).filter(Boolean);
+  const programs = c.programs.filter((p) => p.status === "open")
+    .map((p) => ({ id: p.id, slug: p.slug, name: p.name, kind: p.kind, tagline: p.tagline, description: p.description }));
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <Tracker event="form_view" meta={["InitiateCheckout", { content_name: "enroll" }]} />
-      <div className="mx-auto max-w-2xl px-5 py-8">
+      <Tracker event="form_view" meta={["ViewContent", { content_name: "enroll" }]} />
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-8">
         <Logo />
-        <h1 className="mt-6 text-3xl font-bold text-navy">Secure Your Child’s Seat</h1>
-        <p className="mt-2 text-slate-600">Fill in the details below, then pay to confirm your enrollment.</p>
-        {open.length === 0 ? (
+        <h1 className="mt-5 font-serif text-3xl font-bold text-navy">Enroll Your Child</h1>
+        <p className="mt-1 text-slate-600">It takes about two minutes. No surveys, no consultation call needed.</p>
+
+        {/* Display prices from the built-in fallback are never used for checkout. */}
+        {!c.fromDb || programs.length === 0 ? (
           <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
-            <p className="font-semibold text-navy">Enrollment is not open right now.</p>
-            <p className="mt-1 text-slate-600">Seats open once teachers, schedules and dates are confirmed.</p>
-            <Link href="/" className="btn-emerald mt-4">Back to home</Link>
+            <p className="font-semibold text-navy">Online enrollment is temporarily unavailable.</p>
+            <p className="mt-1 text-slate-600">Please message us on WhatsApp and we will enroll your child right away.</p>
+            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Assalamu Alaikum, I want to enroll my child.")}`} className="btn-emerald mt-4">WhatsApp us</a>
+            <Link href="/" className="btn mt-2 text-navy underline">Back to home</Link>
           </div>
         ) : (
-          <EnrollForm programs={open} selected={searchParams.program} />
+          <div className="mt-6">
+            <EnrollWizard
+              programs={programs} packages={c.packages} ageGroups={c.ageGroups}
+              subjects={c.subjects.map((s) => ({ id: s.id, name: s.name }))}
+              batches={c.batches.map((b) => ({ id: b.id, name: b.name, program_id: b.program_id, class_type: b.class_type, age_group_id: b.age_group_id, timing: b.timing, capacity: b.capacity, left: b.left, active: b.active }))}
+              timingOptions={timingOptions} threshold={c.threshold} whatsapp={WHATSAPP}
+              initial={{ program: searchParams.program, type: searchParams.type, term: searchParams.term }}
+            />
+          </div>
         )}
       </div>
     </main>

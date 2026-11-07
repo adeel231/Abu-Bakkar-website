@@ -6,7 +6,7 @@ import { myReferralCode, track } from "./Tracker";
 
 export default function ParentPromise({ text }: { text: string }) {
   const [supported, setSupported] = useState(false);
-  const [url, setUrl] = useState("https://abubakkaracademy.pk");
+  const [url, setUrl] = useState("https://www.abubakkaracademy.com");
 
   useEffect(() => {
     try { setSupported(localStorage.getItem("aba_promise") === "1"); } catch {}

@@ -51,3 +51,11 @@ body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -appl
     mask-image: linear-gradient(to right, transparent 0%, #000 40%);
   }
 }
+
+/* The designed hero banner already fades to green on its own left edge, so only a light extra fade is needed. */
+@media (min-width: 768px) {
+  .hero-photo.hero-photo-soft {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 12%);
+  }
+}

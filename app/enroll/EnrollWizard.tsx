@@ -1,0 +1,375 @@
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Check, ChevronLeft, GraduationCap, HeartHandshake, User, Users } from "lucide-react";
+import {
+  CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
+  seatsFor, totalPayable, type AgeGroup, type BatchLite, type ClassType, type Pkg,
+} from "@/lib/pricing";
+import { captureCampaign, currentSource, sessionId, track } from "@/components/Tracker";
+import { metaBrowserIds } from "@/components/Analytics";
+
+type Program = { id: string; slug: string; name: string; kind: "character" | "tuition"; tagline: string; description: string };
+type Subject = { id: string; name: string };
+type Props = {
+  programs: Program[]; packages: Pkg[]; ageGroups: AgeGroup[]; subjects: Subject[]; batches: BatchLite[];
+  timingOptions: string[]; threshold: number; whatsapp: string; initial: { program?: string; type?: string; term?: string };
+};
+
+const GRADES = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Other"];
+const STEPS = ["Service", "Class type", "Package", "Student", "Details", "Review"];
+
+export default function EnrollWizard(p: Props) {
+  const router = useRouter();
+  const top = useRef<HTMLDivElement>(null);
+
+  const startProgram = p.programs.find((x) => x.slug === p.initial.program || x.kind === p.initial.program)?.id ?? "";
+  const startType = (p.initial.type === "group" || p.initial.type === "private") ? p.initial.type : "";
+  const [programId, setProgramId] = useState(startProgram);
+  const [classType, setClassType] = useState<ClassType | "">(startProgram ? startType : "");
+  const [pkgId, setPkgId] = useState("");
+  const [age, setAge] = useState("");
+  const [ageGroupId, setAgeGroupId] = useState("");
+  const [grade, setGrade] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [f, setF] = useState({ parent_name: "", whatsapp: "", email: "", city: "", student_first_name: "", timing: "", consent: false, website: "" });
+  const [step, setStep] = useState(0);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const started = useRef(false);
+
+  const program = p.programs.find((x) => x.id === programId);
+  const tuition = program?.kind === "tuition";
+  const options = useMemo(() => (programId && classType ? plan(p.packages, programId, classType) : []), [p.packages, programId, classType]);
+  const pkg = p.packages.find((x) => x.id === pkgId);
+  const ageNum = Number(age);
+  const ageOk = Number.isInteger(ageNum) && ageNum >= 3 && ageNum <= 19;
+  const eligible = ageOk ? groupsForAge(ageNum, p.ageGroups) : [];
+  const group = p.ageGroups.find((g) => g.id === ageGroupId);
+
+  // Jump to the first unfinished step when the page was opened with choices already made (from the homepage buttons).
+  useEffect(() => {
+    if (startProgram && startType) {
+      const opts = plan(p.packages, startProgram, startType);
+      const t = p.programs.find((x) => x.id === startProgram)?.kind === "tuition";
+      const want = p.initial.term && opts.find((o) => o.duration_key === p.initial.term);
+      const pick = want || (t ? opts[0] : monthlyPackage(p.packages, startProgram, startType) ?? opts[0]);
+      if (pick) setPkgId(pick.id);
+      setStep(t || want ? 3 : 2);
+    } else if (startProgram) setStep(1);
+  }, []); // eslint-disable-line
+
+  // Choosing an age auto-selects the age group when there is only one fit.
+  useEffect(() => {
+    if (tuition || !ageOk) { if (!ageOk) setAgeGroupId(""); return; }
+    if (!eligible.some((g) => g.id === ageGroupId)) setAgeGroupId(eligible.length === 1 ? eligible[0].id : "");
+  }, [age, tuition]); // eslint-disable-line
+
+  const status = (type: ClassType, ag: string | null) => {
+    const s = seatsFor(p.batches, programId, type, ag);
+    return { full: s.hasBatches && s.left <= 0, limited: isLimited(s.hasBatches, s.left, p.threshold), left: s.left };
+  };
+  const typeStatus = (type: ClassType) => {
+    if (tuition) return status(type, null);
+    const all = p.ageGroups.map((g) => status(type, g.id));
+    return { full: all.length > 0 && all.every((s) => s.full), limited: all.some((s) => s.limited), left: 0 };
+  };
+
+  const matchingBatches = useMemo(() => {
+    if (!programId || !classType) return [];
+    return seatsFor(p.batches, programId, classType, ageGroupId || null).batches.filter((b) => b.left > 0);
+  }, [p.batches, programId, classType, ageGroupId]);
+
+  function go(n: number) { setErr(""); setStep(n); setTimeout(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30); }
+  function touched() { if (!started.current) { started.current = true; track("form_start"); } }
+  const set = (k: keyof typeof f, v: string | boolean) => { touched(); setF((o) => ({ ...o, [k]: v })); };
+
+  function chooseProgram(id: string) { setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectId(""); go(1); }
+  function chooseType(t: ClassType) {
+    setClassType(t);
+    const opts = plan(p.packages, programId, t);
+    setPkgId((tuition ? opts[0] : monthlyPackage(p.packages, programId, t) ?? opts[0])?.id ?? "");
+    go(2);
+  }
+
+  function validate(s: number): string {
+    if (s === 0 && !programId) return "Please choose a service.";
+    if (s === 1 && !classType) return "Please choose a class type.";
+    if (s === 2 && !pkg) return "Please choose a package.";
+    if (s === 3) {
+      if (!ageOk) return "Please enter the student's age (3 to 19).";
+      if (!tuition && !ageGroupId) return eligible.length ? "Please choose an age group." : "Character Grooming is for ages 5 to 15. Please message us on WhatsApp for other ages.";
+      if (tuition && (!grade || !subjectId)) return "Please select the school grade and the subject.";
+    }
+    if (s === 4) {
+      if (f.parent_name.trim().length < 2) return "Please enter the parent's full name.";
+      if (!/^(\+?92|0)?3\d{9}$/.test(f.whatsapp.replace(/[\s-]/g, ""))) return "Please enter a valid WhatsApp number, e.g. 0333 1234567.";
+      if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) return "That email address does not look right.";
+      if (f.city.trim().length < 2) return "Please enter your city.";
+      if (!f.student_first_name.trim()) return "Please enter the student's first name.";
+      if (!f.consent) return "Please tick the parent consent box.";
+    }
+    return "";
+  }
+  function next() { const m = validate(step); if (m) return setErr(m); go(step + 1); }
+
+  async function submit() {
+    for (const s of [0, 1, 2, 3, 4]) { const m = validate(s); if (m) { setErr(m); setStep(s); return; } }
+    if (!pkg) return;
+    setBusy(true); setErr("");
+    const batchId = f.timing.startsWith("batch:") ? f.timing.slice(6) : "";
+    const timingText = batchId ? (matchingBatches.find((b) => b.id === batchId)?.timing ?? "") : f.timing;
+    const camp = captureCampaign();
+    const res = await fetch("/api/enroll", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        package_id: pkg.id, expected_amount: totalPayable(pkg),
+        parent_name: f.parent_name, whatsapp: f.whatsapp, email: f.email, city: f.city,
+        student_first_name: f.student_first_name, student_age: ageNum,
+        age_group_id: tuition ? "" : ageGroupId, school_grade: tuition ? grade : "", subject_id: tuition ? subjectId : "",
+        preferred_timing: timingText, preferred_batch_id: batchId, consent: f.consent, website: f.website,
+        source: currentSource(), utm: Object.fromEntries(Object.entries(camp).filter(([, v]) => v)), session_id: sessionId(),
+        ...metaBrowserIds(),
+      }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setBusy(false); setErr(j.error || "Something went wrong. Please try again.");
+      if (/price/i.test(j.error || "")) router.refresh();
+      return;
+    }
+    router.push(`/pay/${j.ref}`);
+  }
+
+  const card = (active: boolean, disabled = false) =>
+    `block w-full rounded-2xl border-2 p-4 text-left transition md:p-5 ${disabled ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60" : active ? "border-emerald bg-emerald-50 shadow" : "border-slate-200 bg-white hover:border-emerald/50"}`;
+  const tag = (t: string, tone: "gold" | "red" | "green" = "gold") =>
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone === "gold" ? "bg-gold text-navy" : tone === "red" ? "bg-red-100 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{t}</span>;
+
+  return (
+    <div ref={top} className="scroll-mt-24">
+      {/* progress */}
+      <ol className="flex items-center gap-1" aria-label="Enrollment steps">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex flex-1 flex-col items-center gap-1">
+            <span className={`h-1.5 w-full rounded-full ${i <= step ? "bg-emerald" : "bg-slate-200"}`} />
+            <span className={`hidden text-[11px] sm:block ${i === step ? "font-bold text-navy" : "text-slate-500"}`}>{s}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-2 text-sm font-semibold text-emerald-700 sm:hidden">Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
+
+      {/* running summary */}
+      {pkg && step > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 text-white">
+          <div className="min-w-0 text-sm">
+            <p className="truncate font-semibold">{program?.name} · {classType ? CLASS_TYPE_LABEL[classType] : ""}</p>
+            <p className="text-white/70">{pkg.label}{group ? ` · ${group.label}` : ""}</p>
+          </div>
+          <p className="shrink-0 text-lg font-extrabold text-gold">{formatPKR(totalPayable(pkg))}</p>
+        </div>
+      )}
+
+      <div className="mt-5 rounded-3xl bg-white p-5 shadow-sm md:p-7" onFocusCapture={() => step >= 3 && touched()}>
+        {/* STEP 0 — service */}
+        {step === 0 && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">What would you like for your child?</h2>
+            <p className="mt-1 text-slate-600">Character Grooming and Academic Tuition are two separate services.</p>
+            <div className="mt-5 grid gap-3">
+              {p.programs.map((g) => {
+                const cheapest = p.packages.filter((k) => k.program_id === g.id).sort((a, b) => a.price_pkr - b.price_pkr)[0];
+                const monthly = g.kind === "character";
+                return (
+                  <button key={g.id} type="button" onClick={() => chooseProgram(g.id)} className={card(programId === g.id)}>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-bold text-navy">{g.name}</span>
+                      {g.kind === "character" && tag("Main program")}
+                    </span>
+                    <span className="mt-1 block text-sm text-slate-600">{g.description}</span>
+                    {cheapest && <span className="mt-2 block font-semibold text-emerald-700">{monthly ? "From" : "From"} {formatPKR(cheapest.price_pkr)}{monthly ? " / month" : ` / ${cheapest.label.toLowerCase()}`}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1 — class type */}
+        {step === 1 && program && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">Group or private classes?</h2>
+            <p className="mt-1 text-slate-600">{program.name} is taught online, live.</p>
+            <div className="mt-5 grid gap-3">
+              {(["group", "private"] as ClassType[]).map((t) => {
+                const mp = tuition ? plan(p.packages, programId, t)[0] : monthlyPackage(p.packages, programId, t);
+                if (!mp) return null;
+                const st = typeStatus(t);
+                return (
+                  <button key={t} type="button" disabled={st.full} onClick={() => chooseType(t)} className={card(classType === t, st.full)}>
+                    <span className="flex flex-wrap items-center gap-2">
+                      {t === "group" ? <Users size={20} className="text-emerald-700" /> : <User size={20} className="text-emerald-700" />}
+                      <span className="text-lg font-bold text-navy">{CLASS_TYPE_LABEL[t]}</span>
+                      {st.full ? tag("Seats full", "red") : st.limited ? tag("Limited seats") : null}
+                    </span>
+                    <span className="mt-2 block text-2xl font-extrabold text-navy">{formatPKR(mp.price_pkr)} <span className="text-sm font-medium text-slate-500">{tuition ? `/ ${mp.label.toLowerCase()}` : "/ month"}</span></span>
+                    <span className="mt-1 block text-sm font-medium text-emerald-700">{mp.schedule_note}</span>
+                    <span className="mt-1 block text-sm text-slate-600">{CLASS_TYPE_BLURB[t]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 — package */}
+        {step === 2 && program && classType && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose how you want to pay"}</h2>
+            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions over 4 weeks." : "Monthly is the standard plan. Paying for 3 or 6 months in advance is optional and saves money."}</p>
+            <div className="mt-5 grid gap-3">
+              {options.map((o) => {
+                const sv = savings(o, monthlyPackage(p.packages, programId, classType));
+                const monthly = o.months === 1;
+                return (
+                  <button key={o.id} type="button" onClick={() => setPkgId(o.id)} className={card(pkgId === o.id)}>
+                    <span className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2">
+                        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${pkgId === o.id ? "border-emerald bg-emerald text-white" : "border-slate-300"}`}>{pkgId === o.id && <Check size={12} />}</span>
+                        <span className="font-bold text-navy">{o.label}{monthly && !tuition ? " (standard)" : ""}</span>
+                        {sv > 0 && tag(`Save ${formatPKR(sv)}`, "green")}
+                      </span>
+                      <span className={`font-extrabold text-navy ${monthly ? "text-2xl" : "text-xl"}`}>{formatPKR(o.price_pkr)}</span>
+                    </span>
+                    <span className="mt-1 block pl-7 text-sm text-slate-600">
+                      {o.months > 1 ? `${formatPKR(perMonth(o))} per month · pay once for ${o.months} months` : tuition ? `${o.sessions ?? 12} sessions · pay once` : "Pay month by month"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 — student */}
+        {step === 3 && program && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">About the student</h2>
+            <div className="mt-4 max-w-[12rem]">
+              <label className="label" htmlFor="age">Student age</label>
+              <input id="age" className="input" inputMode="numeric" type="number" min={3} max={19} value={age} onChange={(e) => { touched(); setAge(e.target.value); }} placeholder="e.g. 9" />
+            </div>
+
+            {!tuition && (
+              <div className="mt-5">
+                <p className="label">Age group</p>
+                <div className="grid gap-3">
+                  {p.ageGroups.map((g) => {
+                    const fits = ageOk && eligible.some((e) => e.id === g.id);
+                    const st = classType ? status(classType, g.id) : { full: false, limited: false, left: 0 };
+                    const off = (ageOk && !fits) || st.full;
+                    return (
+                      <button key={g.id} type="button" disabled={off} onClick={() => { touched(); setAgeGroupId(g.id); }} className={card(ageGroupId === g.id, off)}>
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="text-lg font-bold text-navy">{g.label}: Ages {g.min_age} to {g.max_age}</span>
+                          {st.full ? tag("Seats full", "red") : st.limited ? tag("Limited seats") : null}
+                        </span>
+                        <span className="mt-1 block text-sm text-slate-600">Focus: {g.focus}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {ageOk && isBoundaryAge(ageNum, p.ageGroups) && <p className="mt-3 rounded-xl bg-gold/15 p-3 text-sm text-navy">Age {ageNum} fits two groups. Choose the one you prefer. Our team will confirm the best placement for your child.</p>}
+                {ageOk && !eligible.length && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">Character Grooming is for ages 5 to 15.</p>}
+                {!ageOk && <p className="mt-3 text-sm text-slate-500">Enter the age to see which group fits.</p>}
+              </div>
+            )}
+
+            {tuition && (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="label" htmlFor="grade">School grade</label>
+                  <select id="grade" className="input" value={grade} onChange={(e) => { touched(); setGrade(e.target.value); }}>
+                    <option value="">Select grade</option>{GRADES.map((g) => <option key={g}>{g}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="label" htmlFor="subject">Subject needed</label>
+                  <select id="subject" className="input" value={subjectId} onChange={(e) => { touched(); setSubjectId(e.target.value); }}>
+                    <option value="">Select subject</option>{p.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 4 — details */}
+        {step === 4 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-navy">Parent and student details</h2>
+            <div><label className="label" htmlFor="pn">Parent full name</label><input id="pn" className="input" autoComplete="name" value={f.parent_name} onChange={(e) => set("parent_name", e.target.value)} /></div>
+            <div><label className="label" htmlFor="wa">WhatsApp number</label><input id="wa" className="input" inputMode="tel" autoComplete="tel" placeholder="0333 1234567" value={f.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /><p className="mt-1 text-xs text-slate-500">We send your enrollment ID and class joining instructions here.</p></div>
+            <div><label className="label" htmlFor="em">Email address (optional, for your receipt)</label><input id="em" type="email" className="input" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+            <div><label className="label" htmlFor="ct">City</label><input id="ct" className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set("city", e.target.value)} /></div>
+            <div><label className="label" htmlFor="sn">Student first name</label><input id="sn" className="input" value={f.student_first_name} onChange={(e) => set("student_first_name", e.target.value)} /></div>
+            <div>
+              <label className="label" htmlFor="tm">Preferred class timing</label>
+              <select id="tm" className="input" value={f.timing} onChange={(e) => set("timing", e.target.value)}>
+                <option value="">No preference</option>
+                {matchingBatches.length > 0 && <optgroup label="Available classes">
+                  {matchingBatches.map((b) => <option key={b.id} value={"batch:" + b.id}>{b.name}{b.timing ? ` — ${b.timing}` : ""} ({b.left} seats left)</option>)}
+                </optgroup>}
+                <optgroup label="Time of day">{p.timingOptions.map((t) => <option key={t}>{t}</option>)}</optgroup>
+              </select>
+              <p className="mt-1 text-xs text-slate-500">We will confirm the exact class time after your payment is verified.</p>
+            </div>
+            <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" value={f.website} onChange={(e) => set("website", e.target.value)} />
+            <label className="flex items-start gap-3 text-sm text-slate-700">
+              <input type="checkbox" className="mt-1 h-5 w-5 accent-emerald" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} />
+              <span>I am the parent / legal guardian and I consent to Abu Bakkar Academy using my child's first name, age{tuition ? ", school grade" : ""} and my contact details to run classes. I have read the <a href="/privacy" target="_blank" className="underline">Privacy Policy</a> and the <a href="/refund-policy" target="_blank" className="underline">Refund Policy</a>.</span>
+            </label>
+          </div>
+        )}
+
+        {/* STEP 5 — review */}
+        {step === 5 && pkg && program && classType && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">Review and confirm</h2>
+            <dl className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
+              {([
+                ["Service", program.name], ["Class type", CLASS_TYPE_LABEL[classType]], ["Package", pkg.label],
+                ...(tuition ? [["School grade", grade], ["Subject", p.subjects.find((s) => s.id === subjectId)?.name ?? ""]] : [["Age group", group ? `${group.label} (ages ${group.min_age}–${group.max_age})` : ""]]),
+                ["Student", `${f.student_first_name}, age ${age}`], ["Parent", f.parent_name], ["WhatsApp", f.whatsapp], ["City", f.city],
+                ["Preferred timing", f.timing.startsWith("batch:") ? (matchingBatches.find((b) => b.id === f.timing.slice(6))?.name ?? "") : f.timing || "No preference"],
+              ] as string[][]).map(([k, v]) => <div key={k} className="flex justify-between gap-4 p-3"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-navy">{v}</dd></div>)}
+            </dl>
+            <div className="mt-5 rounded-2xl bg-navy p-5 text-white">
+              <p className="text-sm text-white/70">Total payable now</p>
+              <p className="text-4xl font-extrabold text-gold">{formatPKR(totalPayable(pkg))}</p>
+              <p className="mt-1 text-sm text-white/70">{pkg.schedule_note}</p>
+            </div>
+            <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-slate-600">
+              <li>Next page: pay by JazzCash, Easypaisa or bank transfer.</li>
+              <li>Enter your transaction ID. We check it against our account.</li>
+              <li>Once verified, you receive your Enrollment ID and class joining instructions on WhatsApp.</li>
+            </ol>
+          </div>
+        )}
+
+        {err && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{err}</p>}
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+          {step > 0 ? <button type="button" onClick={() => go(step - 1)} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
+          {step >= 2 && step < 5 && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
+          {step === 5 && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
+        </div>
+      </div>
+
+      <p className="mt-4 flex items-center gap-2 text-xs text-slate-500">
+        {step < 2 ? <HeartHandshake size={14} /> : <GraduationCap size={14} />}
+        Questions? <a className="underline" href={`https://wa.me/${p.whatsapp}`} target="_blank" rel="noopener">Message us on WhatsApp</a>.
+      </p>
+    </div>
+  );
+}

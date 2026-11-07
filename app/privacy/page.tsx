@@ -8,14 +8,15 @@ export default function Privacy() {
       <h2>What we collect</h2>
       <ul>
         <li>Parent: full name, WhatsApp number, optional email, city.</li>
-        <li>Child: first name, age and grade only — needed to place them in the right class.</li>
+        <li>Child: first name and age, plus school grade and subject for Academic Tuition. Nothing else. This is needed to place them in the right class.</li>
         <li>Payment: method, transaction ID and amount, to verify your payment. We never see card or wallet PINs.</li>
-        <li>Anonymous site analytics: pages viewed and the campaign you came from.</li>
+        <li>The advertisement or link you came from (for example a campaign name), saved with your enrollment so we can see which ads work. This contains no personal details.</li>
+        <li>Anonymous site analytics: pages viewed and buttons clicked.</li>
       </ul>
       <h2>How we use it</h2>
       <p>To process enrollment and payment, send joining instructions and receipts, deliver classes, give parents progress feedback and improve the academy.</p>
       <h2>Advertising and analytics</h2>
-      <p>With your consent only, we use Google Analytics 4 and the Meta Pixel to measure our advertising. <b>We do not send your name, your child’s details, phone number or email to advertising platforms.</b> Only anonymous events (such as “page viewed” or “enrollment completed” with the amount) are shared. You can decline cookies and still enroll.</p>
+      <p>We use Google Analytics 4 and the Meta Pixel, which set cookies in your browser, to measure our advertising. <b>We do not send your name, your child’s details, phone number or email to advertising platforms.</b> Only anonymous events (such as “page viewed”, or “purchase” with the amount, after we have verified a payment) are shared. You can block or clear these cookies in your browser settings and still enroll.</p>
       <h2>Sharing</h2>
       <p>We do not sell personal data. It is stored with our database provider (Supabase) and shared only with service providers needed to run the academy (e.g. messaging, video-class tools).</p>
       <h2>Retention and your rights</h2>

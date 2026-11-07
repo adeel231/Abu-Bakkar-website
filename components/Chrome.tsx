@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import { EnrollLink, track } from "./Tracker";
 import { Logo } from "./Brand";
 
-const NAV = [["#why", "Why Us"], ["#qualities", "Qualities"], ["#programs", "Programs"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
+const NAV = [["#why", "Why Us"], ["#packages", "Packages"], ["#tuition", "Tuition"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
 const wa = WHATSAPP;
 
-export function AnnouncementBar({ href }: { href: string }) {
+export function AnnouncementBar({ href, limited, price }: { href: string; limited: boolean; price: string }) {
   return (
     <div className="sticky top-0 z-50 bg-gold text-navy">
       <p className="mx-auto max-w-6xl px-4 py-2 text-center text-xs font-medium tracking-wide sm:text-sm">
-        Founding Batch now enrolling — limited seats.{" "}
+        Online Character Grooming from {price} / month{limited ? " — Limited seats available." : "."}{" "}
         <EnrollLink href={href} className="underline">Enroll now</EnrollLink>
       </p>
     </div>
