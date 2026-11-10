@@ -21,7 +21,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-8">
         <Logo />
         <h1 className="mt-5 font-serif text-3xl font-bold text-navy">Enroll Your Child</h1>
-        <p className="mt-1 text-slate-600">It takes about two minutes. No surveys, no consultation call needed.</p>
+        <p className="mt-1 text-slate-600">Takes about 2 minutes.</p>
 
         {/* Display prices from the built-in fallback are never used for checkout. */}
         {!c.fromDb || programs.length === 0 ? (
@@ -32,7 +32,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
         ) : (
           <div className="mt-6">
             <EnrollWizard
-              programs={programs} packages={c.packages} ageGroups={c.ageGroups}
+              programs={programs} packages={c.packages.filter((k) => k.months === 1)} ageGroups={c.ageGroups}
               subjects={c.subjects.map((s) => ({ id: s.id, name: s.name }))}
               batches={c.batches.map((b) => ({ id: b.id, name: b.name, program_id: b.program_id, class_type: b.class_type, age_group_id: b.age_group_id, timing: b.timing, capacity: b.capacity, left: b.left, active: b.active }))}
               timingOptions={timingOptions} threshold={c.threshold} whatsapp={WHATSAPP}

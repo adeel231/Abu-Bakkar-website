@@ -70,3 +70,13 @@ body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -appl
   40% { transform: scale(1.25); color: #c9971c; }
   100% { transform: scale(1); }
 }
+
+/* ---- Admin panel: consistent cards, tables and form controls on every admin page ---- */
+.admin-main .rounded-2xl.bg-white { border: 1px solid rgb(226 232 240 / 0.8); }
+.admin-main table thead tr { background: #f8faf9; }
+.admin-main table th { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: rgb(100 116 139); }
+.admin-main table tbody tr { transition: background-color 0.15s; }
+.admin-main table tbody tr:hover { background: #fafbfa; }
+.admin-main .input { border-radius: 0.65rem; font-size: 0.925rem; }
+.admin-main .label { font-size: 0.8rem; color: rgb(71 85 105); }
+.admin-main .btn-gold { box-shadow: none; }

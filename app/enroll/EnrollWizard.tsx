@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ChevronLeft, GraduationCap, HeartHandshake, User, Users } from "lucide-react";
 import {
-  CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
+  CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
   seatsFor, totalPayable, type AgeGroup, type BatchLite, type ClassType, type Pkg,
 } from "@/lib/pricing";
 import { captureCampaign, currentSource, sessionId, track } from "@/components/Tracker";
@@ -55,7 +55,7 @@ export default function EnrollWizard(p: Props) {
       const want = p.initial.term && opts.find((o) => o.duration_key === p.initial.term);
       const pick = want || (t ? opts[0] : monthlyPackage(p.packages, startProgram, startType) ?? opts[0]);
       if (pick) setPkgId(pick.id);
-      setStep(t || want ? 3 : 2);
+      setStep(t || want || opts.length <= 1 ? 3 : 2);
     } else if (startProgram) setStep(1);
   }, []); // eslint-disable-line
 
@@ -89,7 +89,7 @@ export default function EnrollWizard(p: Props) {
     setClassType(t);
     const opts = plan(p.packages, programId, t);
     setPkgId((tuition ? opts[0] : monthlyPackage(p.packages, programId, t) ?? opts[0])?.id ?? "");
-    go(2);
+    go(opts.length <= 1 ? 3 : 2);
   }
 
   function validate(s: number): string {
@@ -174,8 +174,7 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 0 — service */}
         {step === 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">What would you like for your child?</h2>
-            <p className="mt-1 text-slate-600">Character Grooming and Academic Tuition are two separate services.</p>
+            <h2 className="text-2xl font-bold text-navy">Choose a service</h2>
             <div className="mt-5 grid gap-3">
               {p.programs.map((g) => {
                 const cheapest = p.packages.filter((k) => k.program_id === g.id).sort((a, b) => a.price_pkr - b.price_pkr)[0];
@@ -186,7 +185,6 @@ export default function EnrollWizard(p: Props) {
                       <span className="text-lg font-bold text-navy">{g.name}</span>
                       {g.kind === "character" && tag("Main program")}
                     </span>
-                    <span className="mt-1 block text-sm text-slate-600">{g.description}</span>
                     {cheapest && <span className="mt-2 block font-semibold text-emerald-700">{monthly ? "From" : "From"} {formatPKR(cheapest.price_pkr)}{monthly ? " / month" : ` / ${cheapest.label.toLowerCase()}`}</span>}
                   </button>
                 );
@@ -198,8 +196,7 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 1 — class type */}
         {step === 1 && program && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">Group or private classes?</h2>
-            <p className="mt-1 text-slate-600">{program.name} is taught online, live.</p>
+            <h2 className="text-2xl font-bold text-navy">Group or private?</h2>
             <div className="mt-5 grid gap-3">
               {(["group", "private"] as ClassType[]).map((t) => {
                 const mp = tuition ? plan(p.packages, programId, t)[0] : monthlyPackage(p.packages, programId, t);
@@ -214,7 +211,6 @@ export default function EnrollWizard(p: Props) {
                     </span>
                     <span className="mt-2 block text-2xl font-extrabold text-navy">{formatPKR(mp.price_pkr)} <span className="text-sm font-medium text-slate-500">{tuition ? `/ ${mp.label.toLowerCase()}` : "/ month"}</span></span>
                     <span className="mt-1 block text-sm font-medium text-emerald-700">{mp.schedule_note}</span>
-                    <span className="mt-1 block text-sm text-slate-600">{CLASS_TYPE_BLURB[t]}</span>
                   </button>
                 );
               })}
@@ -225,8 +221,8 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 2 — package */}
         {step === 2 && program && classType && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose how you want to pay"}</h2>
-            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions over 4 weeks." : "Monthly is the standard plan. Paying for 3 or 6 months in advance is optional and saves money."}</p>
+            <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
+            {tuition && <p className="mt-1 text-slate-600">12 live sessions over 4 weeks.</p>}
             <div className="mt-5 grid gap-3">
               {options.map((o) => {
                 const sv = savings(o, monthlyPackage(p.packages, programId, classType));
@@ -254,15 +250,15 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 3 — student */}
         {step === 3 && program && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">About the student</h2>
+            <h2 className="text-2xl font-bold text-navy">How old is your child?</h2>
             <div className="mt-4 max-w-[12rem]">
-              <label className="label" htmlFor="age">Student age</label>
+              <label className="label" htmlFor="age">Age</label>
               <input id="age" className="input" inputMode="numeric" type="number" min={3} max={19} value={age} onChange={(e) => { touched(); setAge(e.target.value); }} placeholder="e.g. 9" />
             </div>
 
             {!tuition && (
               <div className="mt-5">
-                <p className="label">Age group</p>
+                <p className="label">Choose a group</p>
                 <div className="grid gap-3">
                   {p.ageGroups.map((g) => {
                     const fits = ageOk && eligible.some((e) => e.id === g.id);
@@ -279,9 +275,9 @@ export default function EnrollWizard(p: Props) {
                     );
                   })}
                 </div>
-                {ageOk && isBoundaryAge(ageNum, p.ageGroups) && <p className="mt-3 rounded-xl bg-gold/15 p-3 text-sm text-navy">Age {ageNum} fits two groups. Choose the one you prefer. Our team will confirm the best placement for your child.</p>}
+                {ageOk && isBoundaryAge(ageNum, p.ageGroups) && <p className="mt-3 rounded-xl bg-gold/15 p-3 text-sm text-navy">Age {ageNum} fits two groups. Pick one, we will confirm.</p>}
                 {ageOk && !eligible.length && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">Character Grooming is for ages 5 to 15.</p>}
-                {!ageOk && <p className="mt-3 text-sm text-slate-500">Enter the age to see which group fits.</p>}
+                {!ageOk && <p className="mt-3 text-sm text-slate-500">Enter the age to see the right group.</p>}
               </div>
             )}
 
@@ -294,7 +290,7 @@ export default function EnrollWizard(p: Props) {
                   </select>
                 </div>
                 <div>
-                  <label className="label" htmlFor="subject">Subject needed</label>
+                  <label className="label" htmlFor="subject">Subject</label>
                   <select id="subject" className="input" value={subjectId} onChange={(e) => { touched(); setSubjectId(e.target.value); }}>
                     <option value="">Select subject</option>{p.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -307,14 +303,14 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 4 — details */}
         {step === 4 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-navy">Parent and student details</h2>
-            <div><label className="label" htmlFor="pn">Parent full name</label><input id="pn" className="input" autoComplete="name" value={f.parent_name} onChange={(e) => set("parent_name", e.target.value)} /></div>
-            <div><label className="label" htmlFor="wa">WhatsApp number</label><input id="wa" className="input" inputMode="tel" autoComplete="tel" placeholder="0333 1234567" value={f.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /><p className="mt-1 text-xs text-slate-500">We send your enrollment ID and class joining instructions here.</p></div>
-            <div><label className="label" htmlFor="em">Email address (optional, for your receipt)</label><input id="em" type="email" className="input" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
+            <h2 className="text-2xl font-bold text-navy">Your details</h2>
+            <div><label className="label" htmlFor="pn">Your name</label><input id="pn" className="input" autoComplete="name" value={f.parent_name} onChange={(e) => set("parent_name", e.target.value)} /></div>
+            <div><label className="label" htmlFor="wa">WhatsApp number</label><input id="wa" className="input" inputMode="tel" autoComplete="tel" placeholder="0333 1234567" value={f.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /><p className="mt-1 text-xs text-slate-500">We send class details here.</p></div>
+            <div><label className="label" htmlFor="em">Email (optional)</label><input id="em" type="email" className="input" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
             <div><label className="label" htmlFor="ct">City</label><input id="ct" className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set("city", e.target.value)} /></div>
-            <div><label className="label" htmlFor="sn">Student first name</label><input id="sn" className="input" value={f.student_first_name} onChange={(e) => set("student_first_name", e.target.value)} /></div>
+            <div><label className="label" htmlFor="sn">Child's first name</label><input id="sn" className="input" value={f.student_first_name} onChange={(e) => set("student_first_name", e.target.value)} /></div>
             <div>
-              <label className="label" htmlFor="tm">Preferred class timing</label>
+              <label className="label" htmlFor="tm">Preferred time</label>
               <select id="tm" className="input" value={f.timing} onChange={(e) => set("timing", e.target.value)}>
                 <option value="">No preference</option>
                 {matchingBatches.length > 0 && <optgroup label="Available classes">
@@ -322,12 +318,12 @@ export default function EnrollWizard(p: Props) {
                 </optgroup>}
                 <optgroup label="Time of day">{p.timingOptions.map((t) => <option key={t}>{t}</option>)}</optgroup>
               </select>
-              <p className="mt-1 text-xs text-slate-500">We will confirm the exact class time after your payment is verified.</p>
+              <p className="mt-1 text-xs text-slate-500">We confirm the time after payment.</p>
             </div>
             <input type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" value={f.website} onChange={(e) => set("website", e.target.value)} />
             <label className="flex items-start gap-3 text-sm text-slate-700">
               <input type="checkbox" className="mt-1 h-5 w-5 accent-emerald" checked={f.consent} onChange={(e) => set("consent", e.target.checked)} />
-              <span>I am the parent / legal guardian and I consent to Abu Bakkar Academy using my child's first name, age{tuition ? ", school grade" : ""} and my contact details to run classes. I have read the <a href="/privacy" target="_blank" className="underline">Privacy Policy</a> and the <a href="/refund-policy" target="_blank" className="underline">Refund Policy</a>.</span>
+              <span>I am the parent or guardian. I agree to the <a href="/privacy" target="_blank" className="underline">Privacy Policy</a> and <a href="/refund-policy" target="_blank" className="underline">Refund Policy</a>.</span>
             </label>
           </div>
         )}
@@ -335,7 +331,7 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 5 — review */}
         {step === 5 && pkg && program && classType && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">Review and confirm</h2>
+            <h2 className="text-2xl font-bold text-navy">Check and confirm</h2>
             <dl className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
               {([
                 ["Service", program.name], ["Class type", CLASS_TYPE_LABEL[classType]], ["Package", pkg.label],
@@ -345,14 +341,14 @@ export default function EnrollWizard(p: Props) {
               ] as string[][]).map(([k, v]) => <div key={k} className="flex justify-between gap-4 p-3"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-navy">{v}</dd></div>)}
             </dl>
             <div className="mt-5 rounded-2xl bg-navy p-5 text-white">
-              <p className="text-sm text-white/70">Total payable now</p>
+              <p className="text-sm text-white/70">Total to pay</p>
               <p className="text-4xl font-extrabold text-gold">{formatPKR(totalPayable(pkg))}</p>
               <p className="mt-1 text-sm text-white/70">{pkg.schedule_note}</p>
             </div>
             <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-slate-600">
-              <li>Next page: pay by JazzCash, Easypaisa or bank transfer.</li>
-              <li>Enter your transaction ID. We check it against our account.</li>
-              <li>Once verified, you receive your Enrollment ID and class joining instructions on WhatsApp.</li>
+              <li>Pay by JazzCash, Easypaisa or bank.</li>
+              <li>Enter your transaction ID.</li>
+              <li>Get your class details on WhatsApp.</li>
             </ol>
           </div>
         )}
@@ -360,7 +356,7 @@ export default function EnrollWizard(p: Props) {
         {err && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{err}</p>}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          {step > 0 ? <button type="button" onClick={() => go(step - 1)} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
+          {step > 0 ? <button type="button" onClick={() => go(step === 3 && options.length <= 1 ? 1 : step - 1)} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
           {step >= 2 && step < 5 && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
           {step === 5 && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
         </div>

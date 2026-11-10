@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { ArrowRight, BadgeCheck, CreditCard, Download, Heart, Megaphone, Percent, Share2, Users, Wallet } from "lucide-react";
 import { db, dbConfigured, getSettings, type EnrollmentRow } from "@/lib/db";
-import { formatPKR, isConfigured } from "@/lib/pricing";
+import { formatPKR } from "@/lib/pricing";
 import { Flash, Section, Stat } from "./ui";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,10 @@ const FUNNEL: [string, string][] = [
 export default async function Overview({ searchParams }: { searchParams: { msg?: string; err?: string } }) {
   if (!dbConfigured()) return <p>Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.</p>;
   const c = db();
-  const [enr, ev, st, batches, pay] = await Promise.all([
+  const [enr, ev, st, pay] = await Promise.all([
     c.from("enrollments").select("id,ref,status,amount_pkr,source,program_name,class_type,package_label,created_at,verified_at,utm").order("created_at", { ascending: false }).limit(5000),
     c.from("events").select("session_id,name,source").limit(200000),
     getSettings(),
-    c.from("class_batches").select("id").eq("active", true),
     c.from("payments").select("id").eq("status", "submitted"),
   ]);
   const rows = (enr.data ?? []) as Pick<EnrollmentRow, "id" | "ref" | "status" | "amount_pkr" | "source" | "program_name" | "class_type" | "package_label" | "created_at" | "verified_at" | "utm">[];
@@ -52,65 +52,106 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
     const o = byPlan.get(k) ?? { n: 0, revenue: 0 }; o.n++; o.revenue += r.amount_pkr; byPlan.set(k, o);
   }
 
-  const missing: string[] = [];
-  if (![st.bank_details, st.jazzcash_number, st.easypaisa_number].some(isConfigured)) missing.push("Add your real payment details (Settings) — parents cannot pay without them.");
-  if (!(batches.data?.length)) missing.push("No class batches yet (Class Batches). Create one to place enrolled students and to show 'Limited Seats' honestly.");
-  if (!spend) missing.push("Enter your total ad spend (Settings) to see cost per paid student.");
+  // Funnel rows: each step's unique visitors, scaled against the largest step.
+  const steps = [...FUNNEL.map(([k, label]) => ({ label, n: sessions[k]?.size ?? 0 })), { label: "Verified purchases", n: verified.length }];
+  const top = Math.max(1, ...steps.map((x) => x.n));
+  const today = new Date().toLocaleDateString("en-PK", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const engagement: [typeof Heart, string, number][] = [
+    [Heart, "Promise supports", shares.promise_support || 0],
+    [Share2, "WhatsApp shares", shares.share_whatsapp || 0],
+    [Share2, "Facebook shares", shares.share_facebook || 0],
+    [Users, "Referral visits", shares.referral_visit || 0],
+  ];
 
   return (
     <>
-      <Flash sp={searchParams} />
-      {missing.length > 0 && (
-        <div className="rounded-2xl bg-gold/15 p-4 text-sm text-navy"><p className="font-bold">Before you run ads</p><ul className="mt-1 list-disc pl-5">{missing.map((m) => <li key={m}>{m}</li>)}</ul></div>
-      )}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-slate-500">{today}</p>
+          <h1 className="mt-1 font-serif text-3xl font-bold text-navy md:text-4xl">Overview</h1>
+        </div>
+        <Link href="/admin/export" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-navy shadow-sm transition hover:shadow-md">
+          <Download size={16} /> Export enrollments (CSV)
+        </Link>
+      </div>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat l="Revenue (verified)" v={formatPKR(revenue)} />
-        <Stat l="Paid students" v={String(verified.length)} />
-        <Link href="/admin/payments"><Stat l="Payments to verify" v={String(awaiting)} hot={awaiting > 0} /></Link>
-        <Stat l="All enrollments" v={String(rows.length)} />
-        <Stat l="Payment completion" v={`${completion}%`} />
-        <Stat l="Cost per paid student" v={verified.length && spend ? formatPKR(spend / verified.length) : "—"} />
+      <Flash sp={searchParams} />
+
+      <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-6">
+        <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} hint="Verified payments" />
+        <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} hint="Enrolled after verification" />
+        <Link href="/admin/payments" className="block">
+          <Stat icon={CreditCard} l="To verify" v={String(awaiting)} hot={awaiting > 0} hint={awaiting > 0 ? "Check your statement →" : "All caught up"} />
+        </Link>
+        <Stat icon={Users} l="Enrollments" v={String(rows.length)} hint="All, paid or not" />
+        <Stat icon={Percent} l="Completion" v={`${completion}%`} hint="Enrollments that paid" />
+        <Stat icon={Megaphone} l="Cost / student" v={verified.length && spend ? formatPKR(spend / verified.length) : "—"} hint={spend ? `Ad spend ${formatPKR(spend)}` : "Add ad spend in Settings"} />
       </section>
 
-      <Section title="Funnel (unique visitors)">
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
-          {FUNNEL.map(([k, label], i) => {
-            const n = sessions[k]?.size ?? 0, prev = i > 0 ? sessions[FUNNEL[i - 1][0]]?.size ?? 0 : 0;
-            return (
-              <div key={k} className="rounded-2xl bg-white p-4 shadow-sm">
-                <p className="text-xs text-slate-500">{label}</p><p className="text-2xl font-bold text-navy">{n}</p>
-                {i > 0 && prev > 0 && <p className="text-xs text-emerald-700">{Math.round((n / prev) * 100)}% of previous</p>}
-              </div>
-            );
-          })}
-          <div className="rounded-2xl bg-white p-4 shadow-sm ring-2 ring-emerald/30"><p className="text-xs text-slate-500">Verified purchases</p><p className="text-2xl font-bold text-navy">{verified.length}</p></div>
-        </div>
-        <p className="mt-2 text-xs text-slate-500">
-          Cost per website visitor: {visitors && spend ? formatPKR(spend / visitors) : "—"} · Visitors → enrollment started: {visitors ? Math.round((rows.length / visitors) * 100) : 0}% · Shares: WhatsApp {shares.share_whatsapp || 0}, Facebook {shares.share_facebook || 0}, promise supports {shares.promise_support || 0}, referral visits {shares.referral_visit || 0}
-        </p>
-      </Section>
+      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+        <Section title="Visitor funnel" desc="Unique visitors reaching each step">
+          <div className="rounded-2xl bg-white p-5 shadow-sm md:p-6">
+            <ol className="space-y-3.5">
+              {steps.map((x, i) => {
+                const prev = i > 0 ? steps[i - 1].n : 0;
+                const pct = Math.round((x.n / top) * 100);
+                const last = i === steps.length - 1;
+                const conv = i > 0 && prev > 0 ? Math.round((x.n / prev) * 100) : null;
+                return (
+                  <li key={x.label} title={`${x.label}: ${x.n}${conv !== null ? ` (${conv}% of previous step)` : ""}`}>
+                    <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+                      <span className={`font-medium ${last ? "text-navy" : "text-slate-700"}`}>{x.label}</span>
+                      <span className="flex items-baseline gap-2">
+                        {conv !== null && <span className="text-xs text-slate-500">{conv}% of previous</span>}
+                        <b className="tabular-nums text-navy">{x.n.toLocaleString("en-US")}</b>
+                      </span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-slate-100">
+                      <div className={`h-full rounded-full ${last ? "bg-gold" : "bg-[#0E7C5A]"}`} style={{ width: `${x.n ? Math.max(pct, 1.5) : 0}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+            <p className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+              Cost per website visitor: <b className="text-slate-700">{visitors && spend ? formatPKR(spend / visitors) : "—"}</b> · Visitors who started enrolling: <b className="text-slate-700">{visitors ? Math.round((rows.length / visitors) * 100) : 0}%</b>
+            </p>
+          </div>
+        </Section>
 
-      <Section title="Advertising sources and referrals" action={<Link className="text-sm underline" href="/admin/export">Export all enrollments (CSV)</Link>}>
+        <Section title="Engagement" desc="Promise, shares and referrals">
+          <div className="grid grid-cols-2 gap-3">
+            {engagement.map(([Icon, label, n]) => (
+              <div key={label} className="rounded-2xl bg-white p-4 shadow-sm">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-50 text-[#a77d0c]"><Icon size={16} /></span>
+                <p className="mt-3 text-2xl font-bold tabular-nums text-navy">{n.toLocaleString("en-US")}</p>
+                <p className="text-xs text-slate-500">{label}</p>
+              </div>
+            ))}
+          </div>
+        </Section>
+      </div>
+
+      <Section title="Advertising sources and referrals" desc="Where visitors and paying students came from">
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
           <table className="w-full min-w-[34rem] text-sm">
-            <thead><tr className="text-left text-slate-500"><th className="p-3">Source / campaign</th><th className="p-3 text-right">Visitors</th><th className="p-3 text-right">Enrollments</th><th className="p-3 text-right">Paid</th><th className="p-3 text-right">Revenue</th></tr></thead>
+            <thead><tr className="text-left"><th className="p-3 pl-5">Source / campaign</th><th className="p-3 text-right">Visitors</th><th className="p-3 text-right">Enrollments</th><th className="p-3 text-right">Paid</th><th className="p-3 pr-5 text-right">Revenue</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {sources.map(([k, o]) => <tr key={k}><td className="p-3 font-medium text-navy">{k}</td><td className="p-3 text-right">{o.visitors}</td><td className="p-3 text-right">{o.enrolled}</td><td className="p-3 text-right">{o.paid}</td><td className="p-3 text-right">{formatPKR(o.revenue)}</td></tr>)}
-              {!sources.length && <tr><td className="p-3 text-slate-500" colSpan={5}>No traffic recorded yet.</td></tr>}
+              {sources.map(([k, o]) => <tr key={k}><td className="p-3 pl-5 font-medium text-navy">{k}</td><td className="p-3 text-right tabular-nums">{o.visitors}</td><td className="p-3 text-right tabular-nums">{o.enrolled}</td><td className="p-3 text-right tabular-nums">{o.paid}</td><td className="p-3 pr-5 text-right font-semibold tabular-nums text-navy">{formatPKR(o.revenue)}</td></tr>)}
+              {!sources.length && <tr><td className="p-6 text-center text-slate-500" colSpan={5}>No traffic recorded yet.</td></tr>}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Tip: tag every ad link with <code>?utm_source=facebook&amp;utm_campaign=your-campaign</code>. Referral shares appear as “referral / code”.</p>
+        <p className="mt-2 text-xs text-slate-500">Tip: tag every ad link with <code className="rounded bg-slate-100 px-1">?utm_source=facebook&amp;utm_campaign=your-campaign</code>. Referral shares appear as “referral / code”.</p>
       </Section>
 
-      <Section title="Revenue by package">
+      <Section title="Revenue by package" desc="Verified payments only" action={<Link href="/admin/enrollments" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline">All enrollments <ArrowRight size={14} /></Link>}>
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
           <table className="w-full min-w-[28rem] text-sm">
-            <thead><tr className="text-left text-slate-500"><th className="p-3">Service · class type · package</th><th className="p-3 text-right">Students</th><th className="p-3 text-right">Revenue</th></tr></thead>
+            <thead><tr className="text-left"><th className="p-3 pl-5">Service · class type · package</th><th className="p-3 text-right">Students</th><th className="p-3 pr-5 text-right">Revenue</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {Array.from(byPlan.entries()).map(([k, o]) => <tr key={k}><td className="p-3 font-medium text-navy">{k}</td><td className="p-3 text-right">{o.n}</td><td className="p-3 text-right">{formatPKR(o.revenue)}</td></tr>)}
-              {!byPlan.size && <tr><td className="p-3 text-slate-500" colSpan={3}>No verified payments yet.</td></tr>}
+              {Array.from(byPlan.entries()).map(([k, o]) => <tr key={k}><td className="p-3 pl-5 font-medium text-navy">{k}</td><td className="p-3 text-right tabular-nums">{o.n}</td><td className="p-3 pr-5 text-right font-semibold tabular-nums text-navy">{formatPKR(o.revenue)}</td></tr>)}
+              {!byPlan.size && <tr><td className="p-6 text-center text-slate-500" colSpan={3}>No verified payments yet.</td></tr>}
             </tbody>
           </table>
         </div>
