@@ -48,9 +48,9 @@ export async function POST(req: Request) {
   const wa = normalisePk(d.whatsapp);
   if (!wa) return NextResponse.json({ error: "Enter a valid Pakistani WhatsApp number (e.g. 0333 1234567)." }, { status: 400 });
 
-  // Only 1-month packages are sold now (the 3 and 6 month advance plans were removed).
-  const { data: pk } = await db().from("packages").select("months").eq("id", d.package_id).maybeSingle();
-  if (pk && pk.months > 1) return NextResponse.json({ error: "This package is no longer available. Please choose the monthly plan." }, { status: 400 });
+  // Only monthly Group packages are sold now (the 3/6 month plans and Private classes were removed).
+  const { data: pk } = await db().from("packages").select("months,class_type").eq("id", d.package_id).maybeSingle();
+  if (pk && (pk.months > 1 || pk.class_type !== "group")) return NextResponse.json({ error: "This package is no longer available. Please choose the monthly group plan." }, { status: 400 });
 
   const { website, whatsapp, ...rest } = d;
   void website; void whatsapp;

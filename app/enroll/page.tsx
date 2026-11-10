@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/Brand";
 import Tracker from "@/components/Tracker";
+import { AnnouncementBar } from "@/components/Chrome";
 import EnrollWizard from "./EnrollWizard";
 import { getCatalog, getSettings } from "@/lib/db";
 import { WHATSAPP, WHATSAPP_PRETTY } from "@/lib/contact";
@@ -18,6 +19,8 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
   return (
     <main className="min-h-screen bg-slate-50">
       <Tracker event="form_view" meta={["ViewContent", { content_name: "enroll" }]} />
+      {/* Same top strip as the home page: phone number always visible */}
+      <div className="sticky top-0 z-50"><AnnouncementBar /></div>
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-8">
         <Logo />
         <h1 className="mt-5 font-serif text-3xl font-bold text-navy">Enroll Your Child</h1>
@@ -32,7 +35,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
         ) : (
           <div className="mt-6">
             <EnrollWizard
-              programs={programs} packages={c.packages.filter((k) => k.months === 1)} ageGroups={c.ageGroups}
+              programs={programs} packages={c.packages.filter((k) => k.months === 1 && k.class_type === "group")} ageGroups={c.ageGroups}
               subjects={c.subjects.map((s) => ({ id: s.id, name: s.name }))}
               batches={c.batches.map((b) => ({ id: b.id, name: b.name, program_id: b.program_id, class_type: b.class_type, age_group_id: b.age_group_id, timing: b.timing, capacity: b.capacity, left: b.left, active: b.active }))}
               timingOptions={timingOptions} threshold={c.threshold} whatsapp={WHATSAPP}

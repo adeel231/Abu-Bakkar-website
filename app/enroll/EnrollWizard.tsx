@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, GraduationCap, HeartHandshake, User, Users } from "lucide-react";
+import { Check, ChevronLeft, User, Users } from "lucide-react";
+import { WhatsAppIcon } from "@/components/Chrome";
 import {
   CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
   seatsFor, totalPayable, type AgeGroup, type BatchLite, type ClassType, type Pkg,
@@ -23,8 +24,13 @@ export default function EnrollWizard(p: Props) {
   const router = useRouter();
   const top = useRef<HTMLDivElement>(null);
 
+  // Class types that still have a package on sale for a program (Private is no longer offered).
+  const typesFor = (progId: string) => (["group", "private"] as ClassType[]).filter((t) => p.packages.some((k) => k.program_id === progId && k.class_type === t));
   const startProgram = p.programs.find((x) => x.slug === p.initial.program || x.kind === p.initial.program)?.id ?? "";
-  const startType = (p.initial.type === "group" || p.initial.type === "private") ? p.initial.type : "";
+  const startTypes = startProgram ? typesFor(startProgram) : [];
+  const askedType = (p.initial.type === "group" || p.initial.type === "private") ? p.initial.type : "";
+  // An old link may still ask for "private": fall back to the only type on offer.
+  const startType: ClassType | "" = askedType && startTypes.includes(askedType) ? askedType : startTypes.length === 1 ? startTypes[0] : "";
   const [programId, setProgramId] = useState(startProgram);
   const [classType, setClassType] = useState<ClassType | "">(startProgram ? startType : "");
   const [pkgId, setPkgId] = useState("");
@@ -84,12 +90,25 @@ export default function EnrollWizard(p: Props) {
   function touched() { if (!started.current) { started.current = true; track("form_start"); } }
   const set = (k: keyof typeof f, v: string | boolean) => { touched(); setF((o) => ({ ...o, [k]: v })); };
 
-  function chooseProgram(id: string) { setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectId(""); go(1); }
-  function chooseType(t: ClassType) {
+  function chooseProgram(id: string) {
+    setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectId("");
+    const ts = typesFor(id);
+    if (ts.length === 1) chooseType(ts[0], id);   // only one class type on offer: nothing to choose
+    else go(1);
+  }
+  function chooseType(t: ClassType, progId = programId) {
     setClassType(t);
-    const opts = plan(p.packages, programId, t);
-    setPkgId((tuition ? opts[0] : monthlyPackage(p.packages, programId, t) ?? opts[0])?.id ?? "");
+    const opts = plan(p.packages, progId, t);
+    const isTuition = p.programs.find((x) => x.id === progId)?.kind === "tuition";
+    setPkgId((isTuition ? opts[0] : monthlyPackage(p.packages, progId, t) ?? opts[0])?.id ?? "");
     go(opts.length <= 1 ? 3 : 2);
+  }
+  // Back skips the steps that had only one choice.
+  function back() {
+    const oneType = typesFor(programId).length <= 1;
+    if (step === 3 && options.length <= 1) return go(oneType ? 0 : 1);
+    if (step === 2 && oneType) return go(0);
+    go(step - 1);
   }
 
   function validate(s: number): string {
@@ -356,16 +375,22 @@ export default function EnrollWizard(p: Props) {
         {err && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-700">{err}</p>}
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          {step > 0 ? <button type="button" onClick={() => go(step === 3 && options.length <= 1 ? 1 : step - 1)} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
+          {step > 0 ? <button type="button" onClick={back} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
           {step >= 2 && step < 5 && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
           {step === 5 && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
         </div>
       </div>
 
-      <p className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-        {step < 2 ? <HeartHandshake size={14} /> : <GraduationCap size={14} />}
-        Questions? <a className="underline" href={`https://wa.me/${p.whatsapp}`} target="_blank" rel="noopener">Message us on WhatsApp</a>.
-      </p>
+      {/* Clear way to get help at every step */}
+      <a href={`https://wa.me/${p.whatsapp}?text=${encodeURIComponent("Assalamu Alaikum, I need help with enrollment.")}`} target="_blank" rel="noopener"
+        onClick={() => track("enroll_click")}
+        className="mt-5 flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-white shadow-lg shadow-[#25D366]/25 transition hover:brightness-105">
+        <WhatsAppIcon className="h-7 w-7 shrink-0" />
+        <span className="text-left leading-tight">
+          <span className="block text-xs font-medium text-white/90">Questions? Need help?</span>
+          <span className="block text-base font-bold">Chat with us on WhatsApp</span>
+        </span>
+      </a>
     </div>
   );
 }
