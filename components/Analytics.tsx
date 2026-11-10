@@ -2,10 +2,10 @@
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { META_PIXEL_ID } from "@/lib/contact";
+import { META_PIXEL_IDS } from "@/lib/contact";
 
 const GA = process.env.NEXT_PUBLIC_GA4_ID;
-const PX = META_PIXEL_ID;
+const PX = META_PIXEL_IDS.length > 0;
 const GTM = process.env.NEXT_PUBLIC_GTM_ID;
 
 declare global {
@@ -79,7 +79,7 @@ export default function Analytics() {
       {PX && (
         <noscript>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img height="1" width="1" style={{ display: "none" }} alt="" src={`https://www.facebook.com/tr?id=${PX}&ev=PageView&noscript=1`} />
+          {META_PIXEL_IDS.map((id) => <img key={id} height="1" width="1" style={{ display: "none" }} alt="" src={`https://www.facebook.com/tr?id=${id}&ev=PageView&noscript=1`} />)}
         </noscript>
       )}
       {PX && (
@@ -87,7 +87,7 @@ export default function Analytics() {
           !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
           if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
           s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init','${PX}');fbq('track','PageView');
+          ${META_PIXEL_IDS.map((id) => `fbq('init','${id}');`).join("")}fbq('track','PageView');
           (window.__abaPx||[]).forEach(function(a){fbq.apply(null,a)});window.__abaPx=null;
         `}</Script>
       )}
