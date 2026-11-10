@@ -52,10 +52,21 @@ body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -appl
   }
 }
 
-/* The designed hero banner already fades to green on its own left edge, so only a light extra fade is needed. */
+/* The designed hero banner already fades to green on its own left edge, so only a light extra fade is needed.
+   On phones the photo sits above the text: keep its top (the dream cloud) fully visible and fade only the bottom edge into the green. */
+.hero-photo.hero-photo-soft {
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
 @media (min-width: 768px) {
   .hero-photo.hero-photo-soft {
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%);
     mask-image: linear-gradient(to right, transparent 0%, #000 12%);
   }
+}
+
+@keyframes promise-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); color: #c9971c; }
+  100% { transform: scale(1); }
 }

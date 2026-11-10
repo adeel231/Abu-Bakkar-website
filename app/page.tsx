@@ -5,7 +5,7 @@ import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
 import { AgeGroups, CharacterPackages } from "@/components/Packages";
 import { AnnouncementBar, FloatingBar, Header } from "@/components/Chrome";
-import { anyLimited, getCatalog, getSettings } from "@/lib/db";
+import { anyLimited, getCatalog, getPromiseCount, getSettings } from "@/lib/db";
 import { formatPKR, monthlyPackage } from "@/lib/pricing";
 import { buildFaq } from "@/lib/faq";
 import { WHATSAPP } from "@/lib/contact";
@@ -34,7 +34,7 @@ const JOURNEY = [
 ];
 
 export default async function Home() {
-  const [c, settings] = await Promise.all([getCatalog(), getSettings()]);
+  const [c, settings, promiseCount] = await Promise.all([getCatalog(), getSettings(), getPromiseCount()]);
   const hook = (settings.hero_hook || "Abu Bakkar Ne Sab Ka Dil Kyun Jeeta?").replace(/!/g, "").replace(/Abu Bakar(?!k)/g, "Abu Bakkar");
   const sub = (settings.hero_sub || "Sirf Uski Taleem Ki Wajah Se Nahi!\nUske Kirdar Aur Akhlaq Ki Wajah Se").split("\n").map((x) => x.trim()).filter(Boolean);
   const promise = settings.promise_text || "I promise to focus on my child's character as much as their education.";
@@ -49,12 +49,15 @@ export default async function Home() {
   return (
     <main>
       <Tracker event="landing_view" meta={["ViewContent", { content_name: "landing" }]} />
-      <AnnouncementBar href={enrollHref} limited={limited} price={price} />
-      <Header href={enrollHref} />
+      {/* Strip + menu stick together, so the menu always sits right under the strip however tall it gets */}
+      <div className="sticky top-0 z-50">
+        <AnnouncementBar />
+        <Header href={enrollHref} />
+      </div>
 
       {/* 1. HERO — the designed banner (boy imagining the young man he admires) */}
       <HeroBand
-        as="h1" concept image="/hero-boy.jpg"
+        as="h1" concept image="/hero-boy-full.jpg"
         alt="A boy at his desk imagines himself as the young man he admires, reading a book"
         hook={hook} sub={sub} badge={limited ? "Limited Seats Available" : undefined}
         pill={<><Sprout size={16} /> Sirf Taleem Nahi, Tarbiyat Bhi <Sprout size={16} className="-scale-x-100" /></>}
@@ -135,8 +138,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* PARENT PROMISE (unchanged) */}
-      <ParentPromise text={promise} />
+      {/* PARENT PROMISE + live counter */}
+      <ParentPromise text={promise} count={promiseCount} />
 
       {/* HOW IT WORKS */}
       <section id="journey" className="bg-slate-50 text-navy">

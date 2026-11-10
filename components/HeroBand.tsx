@@ -19,7 +19,7 @@ export default function HeroBand({ image, alt, imagePos = "bg-[position:60%_20%]
     <section id={id} className={"relative isolate overflow-hidden bg-[#052a1f] text-white lg:aspect-[1571/768]" + (concept ? " lg:!aspect-[2001/786]" : "")}>
       <div role="img" aria-label={alt}
         className={concept
-          ? "hero-photo hero-photo-soft order-last h-72 w-full bg-cover bg-no-repeat bg-[position:45%_20%] sm:h-96 md:absolute md:inset-y-0 md:right-0 md:-z-10 md:h-auto md:w-[55%] md:bg-[position:40%_center] lg:w-[61.5%] lg:bg-[length:auto_100%] lg:bg-[position:right_center]"
+          ? "hero-photo hero-photo-soft order-last aspect-[1231/786] w-full bg-cover bg-no-repeat bg-center md:aspect-auto md:absolute md:inset-y-0 md:right-0 md:-z-10 md:h-auto md:w-[55%] md:bg-[position:40%_center] lg:w-[61.5%] lg:bg-[length:auto_100%] lg:bg-[position:right_center]"
           : `hero-photo order-last h-72 w-full bg-cover ${imagePos} md:absolute md:inset-y-0 md:right-0 md:-z-10 md:h-auto md:w-[50%] md:bg-[position:right_center] lg:w-[61.8%]`}
         style={{ backgroundImage: `url(${image})` }} />
 

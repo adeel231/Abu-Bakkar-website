@@ -1,11 +1,13 @@
 "use client";
-import { Heart, HeartHandshake, Facebook, Send } from "lucide-react";
+import { Heart, HeartHandshake, Facebook, Send, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { adEvent } from "./Analytics";
 import { myReferralCode, track } from "./Tracker";
 
-export default function ParentPromise({ text }: { text: string }) {
+export default function ParentPromise({ text, count: initialCount = 0 }: { text: string; count?: number }) {
   const [supported, setSupported] = useState(false);
+  const [count, setCount] = useState(initialCount);
+  const [justJoined, setJustJoined] = useState(false);
   const [url, setUrl] = useState("https://www.abubakkaracademy.com");
 
   useEffect(() => {
@@ -19,6 +21,8 @@ export default function ParentPromise({ text }: { text: string }) {
   function support() {
     if (supported) return;
     setSupported(true);
+    setCount((n) => n + 1);
+    setJustJoined(true);
     try { localStorage.setItem("aba_promise", "1"); } catch {}
     track("promise_support");
     adEvent("PromiseSupport");
@@ -47,6 +51,19 @@ export default function ParentPromise({ text }: { text: string }) {
             “{text}”
           </blockquote>
           <div className="mx-auto mt-6 h-0.5 w-56 bg-gradient-to-r from-transparent via-gold to-transparent" />
+
+          {/* Promise counter */}
+          <div className="mx-auto mt-8 w-fit rounded-2xl border border-gold/60 bg-white/70 px-6 py-4 shadow-sm" aria-live="polite">
+            <p className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#0b5a3e]">
+              <Users size={18} /> Parents who made this promise
+            </p>
+            <p key={count} className={`mt-1 font-serif text-5xl font-extrabold text-[#0b3d2c] ${justJoined ? "animate-[promise-pop_0.6s_ease-out]" : ""}`}>
+              {count.toLocaleString("en-US")}
+            </p>
+            <p className="mt-1 text-sm text-[#2f3b35]">
+              {justJoined ? "JazakAllah! You are one of them now." : supported ? "You have made this promise. JazakAllah!" : count === 0 ? "Be the first parent to make this promise." : "Join them by pressing the button below."}
+            </p>
+          </div>
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3">
             <button onClick={support} className="btn w-full bg-[#0b5a3e] text-lg text-white shadow-lg hover:brightness-110">

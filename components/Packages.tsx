@@ -1,12 +1,13 @@
-import Link from "next/link";
 import { Check, GraduationCap, User, Users } from "lucide-react";
 import { EnrollLink } from "./Tracker";
 import {
-  CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, isLimited, monthlyPackage, perMonth, plan, savings, seatsFor, type ClassType,
+  CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, isLimited, monthlyPackage, plan, seatsFor, type ClassType,
 } from "@/lib/pricing";
 import type { Catalog } from "@/lib/db";
 
 const TYPES: ClassType[] = ["group", "private"];
+/** Only the Group plan is shown for Character Grooming. */
+const CHARACTER_TYPES: ClassType[] = ["group"];
 
 function status(c: Catalog, programId: string, type: ClassType, withGroups: boolean) {
   const combos = withGroups ? c.ageGroups.map((g) => seatsFor(c.batches, programId, type, g.id)) : [seatsFor(c.batches, programId, type, null)];
@@ -20,7 +21,7 @@ const Tag = ({ children, tone = "gold" }: { children: React.ReactNode; tone?: "g
   <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone === "gold" ? "bg-gold text-navy" : "bg-red-100 text-red-700"}`}>{children}</span>
 );
 
-/** Character Grooming: two plan cards (Group / Private) with the monthly price most prominent and optional advance savings. */
+/** Character Grooming: the Group plan card with its monthly price. */
 export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
   const prog = c.programs.find((p) => p.kind === "character");
   if (!prog) return null;
@@ -30,13 +31,11 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
         <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-gold">Character Grooming</p>
         <h2 className="h2 mt-2 text-center">Choose Your Package</h2>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          {TYPES.map((t) => {
-            const options = plan(c.packages, prog.id, t);
+        <div className="mx-auto mt-10 grid max-w-xl gap-6">
+          {CHARACTER_TYPES.map((t) => {
             const monthly = monthlyPackage(c.packages, prog.id, t);
             if (!monthly) return null;
             const st = status(c, prog.id, t, true);
-            const advance = options.filter((o) => o.months > 1);
             return (
               <div key={t} className={`flex flex-col rounded-3xl border-2 bg-white p-6 shadow-sm md:p-8 ${t === "group" ? "border-gold" : "border-slate-200"}`}>
                 <div className="flex flex-wrap items-center gap-2">
@@ -55,24 +54,6 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
                   <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />Live online · Islamic manners · Practical activities</li>
                   <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{t === "group" ? "Small group of children of a similar age" : "Teacher's full attention on your child"}</li>
                 </ul>
-
-                {advance.length > 0 && (
-                  <div className="mt-6 rounded-2xl bg-[#fbf7ec] p-4">
-                    <p className="text-sm font-bold text-navy">Optional: pay in advance and save</p>
-                    <div className="mt-2 divide-y divide-[#e3d8bc]">
-                      {advance.map((o) => {
-                        const sv = savings(o, monthly);
-                        return (
-                          <Link key={o.id} href={`/enroll?program=${prog.slug}&type=${t}&term=${o.duration_key}`}
-                            className="flex items-center justify-between gap-3 py-2.5 text-sm hover:text-emerald-700">
-                            <span><b>{o.label}</b><span className="block text-xs text-slate-500">{formatPKR(perMonth(o))} per month</span></span>
-                            <span className="text-right"><b className="text-base">{formatPKR(o.price_pkr)}</b>{sv > 0 && <span className="block text-xs font-bold text-emerald-700">Save {formatPKR(sv)}</span>}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 <div className="mt-auto pt-6">
                   {st.full ? (

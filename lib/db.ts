@@ -51,6 +51,15 @@ export async function getSettings(): Promise<Record<string, string>> {
   } catch { return {}; }
 }
 
+/** How many parents have pressed "I Support This Promise" (one per browser). */
+export async function getPromiseCount(): Promise<number> {
+  if (!dbConfigured()) return 0;
+  try {
+    const { count } = await db().from("events").select("id", { count: "exact", head: true }).eq("name", "promise_support");
+    return count ?? 0;
+  } catch { return 0; }
+}
+
 /** True when real capacity exists and is nearly used up for any choice in this program. */
 export function programLimited(c: Catalog, programId: string): boolean {
   const prog = c.programs.find((p) => p.id === programId);
