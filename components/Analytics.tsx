@@ -7,6 +7,7 @@ import { META_PIXEL_IDS } from "@/lib/contact";
 const GA = process.env.NEXT_PUBLIC_GA4_ID;
 const PX = META_PIXEL_IDS.length > 0;
 const GTM = process.env.NEXT_PUBLIC_GTM_ID;
+const CLARITY = process.env.NEXT_PUBLIC_CLARITY_ID;
 
 declare global {
   interface Window { fbq?: (...a: any[]) => void; gtag?: (...a: any[]) => void; dataLayer?: any[]; __abaPx?: any[][] | null; __abaGa?: any[][] | null }
@@ -57,8 +58,22 @@ export default function Analytics() {
     try { window.fbq?.("track", "PageView"); } catch {}
   }, [path]);
 
+  // Clarity records sessions, so keep it off the admin panel (student names, phones, payments).
+  const clarity = CLARITY && !path?.startsWith("/admin");
+  useEffect(() => {
+    if (!CLARITY) return;
+    try { (window as any).clarity?.(path?.startsWith("/admin") ? "stop" : "start"); } catch {}
+  }, [path]);
+
   return (
     <>
+      {clarity && (
+        <Script id="ms-clarity" strategy="afterInteractive">{`
+          (function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${CLARITY}");
+        `}</Script>
+      )}
       {GA && (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA}`} strategy="afterInteractive" />
