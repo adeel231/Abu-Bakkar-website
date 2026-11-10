@@ -165,18 +165,26 @@ export default function EnrollWizard(p: Props) {
   const tag = (t: string, tone: "gold" | "red" | "green" = "gold") =>
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone === "gold" ? "bg-gold text-navy" : tone === "red" ? "bg-red-100 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{t}</span>;
 
+  // Progress shows only the steps the parent will actually see: "Class type" and "Package" are
+  // skipped automatically when there is just one choice (today: Group only, Monthly only).
+  const progs = programId ? [programId] : p.programs.map((x) => x.id);
+  const skipType = progs.every((id) => typesFor(id).length <= 1);
+  const skipPkg = progs.every((id) => typesFor(id).every((t) => plan(p.packages, id, t).length <= 1));
+  const shown = STEPS.map((label, i) => ({ label, i })).filter(({ i }) => !(i === 1 && skipType) && !(i === 2 && skipPkg));
+  const pos = Math.max(0, shown.filter(({ i }) => i <= step).length - 1);
+
   return (
     <div ref={top} className="scroll-mt-24">
       {/* progress */}
       <ol className="flex items-center gap-1" aria-label="Enrollment steps">
-        {STEPS.map((s, i) => (
-          <li key={s} className="flex flex-1 flex-col items-center gap-1">
-            <span className={`h-1.5 w-full rounded-full ${i <= step ? "bg-emerald" : "bg-slate-200"}`} />
-            <span className={`hidden text-[11px] sm:block ${i === step ? "font-bold text-navy" : "text-slate-500"}`}>{s}</span>
+        {shown.map(({ label }, n) => (
+          <li key={label} className="flex flex-1 flex-col items-center gap-1">
+            <span className={`h-1.5 w-full rounded-full ${n <= pos ? "bg-emerald" : "bg-slate-200"}`} />
+            <span className={`hidden text-[11px] sm:block ${n === pos ? "font-bold text-navy" : "text-slate-500"}`}>{label}</span>
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-sm font-semibold text-emerald-700 sm:hidden">Step {step + 1} of {STEPS.length}: {STEPS[step]}</p>
+      <p className="mt-2 text-sm font-semibold text-emerald-700 sm:hidden">Step {pos + 1} of {shown.length}: {shown[pos]?.label}</p>
 
       {/* running summary */}
       {pkg && step > 0 && (

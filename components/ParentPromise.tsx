@@ -52,18 +52,7 @@ export default function ParentPromise({ text, count: initialCount = 0 }: { text:
           </blockquote>
           <div className="mx-auto mt-6 h-0.5 w-56 bg-gradient-to-r from-transparent via-gold to-transparent" />
 
-          {/* Promise counter */}
-          <div className="mx-auto mt-8 w-fit rounded-2xl border border-gold/60 bg-white/70 px-6 py-4 shadow-sm" aria-live="polite">
-            <p className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#0b5a3e]">
-              <Users size={18} /> Parents who made this promise
-            </p>
-            <p key={count} className={`mt-1 font-serif text-5xl font-extrabold text-[#0b3d2c] ${justJoined ? "animate-[promise-pop_0.6s_ease-out]" : ""}`}>
-              {count.toLocaleString("en-US")}
-            </p>
-            <p className="mt-1 text-sm text-[#2f3b35]">
-              {justJoined ? "JazakAllah! You are one of them now." : supported ? "You have made this promise. JazakAllah!" : count === 0 ? "Be the first parent to make this promise." : "Join them by pressing the button below."}
-            </p>
-          </div>
+          {/* Promise counter card hidden from the page (the count is still recorded and kept). */}
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3">
             <button onClick={support} className="btn w-full bg-[#0b5a3e] text-lg text-white shadow-lg hover:brightness-110">
