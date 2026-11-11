@@ -95,7 +95,7 @@ export default function ChatWidget({ phone, whatsapp }: { phone: string; whatsap
     <>
       {!open && (
         <button type="button" onClick={() => setOpen(true)} aria-label="Ask the academy assistant"
-          className="fixed bottom-40 right-4 z-40 h-14 w-14 overflow-hidden rounded-2xl shadow-xl ring-[3px] ring-white transition hover:scale-105 md:bottom-[7.25rem] md:right-6 md:h-16 md:w-16">
+          className="fixed bottom-20 right-4 z-40 h-14 w-14 overflow-hidden rounded-2xl shadow-xl ring-[3px] ring-white transition hover:scale-105 md:bottom-6 md:right-6 md:h-16 md:w-16">
           <BotIcon className="h-full w-full" />
         </button>
       )}

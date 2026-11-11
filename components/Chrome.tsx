@@ -60,11 +60,7 @@ export const WhatsAppIcon = ({ className = "h-9 w-9 md:h-10 md:w-10" }: { classN
 export function FloatingBar({ href }: { href: string }) {
   return (
     <>
-      {wa && (
-        <a href={`https://wa.me/${wa}?text=${encodeURIComponent("Assalamu Alaikum, I have a question about Abu Bakkar Academy.")}`}
-          target="_blank" rel="noopener" aria-label="Chat on WhatsApp" onClick={() => track("enroll_click")}
-          className="fixed bottom-20 right-4 z-40 flex h-16 w-16 items-center md:h-[72px] md:w-[72px] justify-center rounded-full bg-[#25D366] text-white shadow-xl ring-[3px] ring-white transition hover:scale-105 md:bottom-6 md:right-6"><WhatsAppIcon /></a>
-      )}
+      {/* The floating WhatsApp button was removed: the chat assistant button replaces it (the chat window has its own WhatsApp button). */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 backdrop-blur md:hidden">
         <EnrollLink href={href} className="btn-gold w-full">ENROLL NOW</EnrollLink>
       </div>
