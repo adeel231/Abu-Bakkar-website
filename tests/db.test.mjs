@@ -72,7 +72,7 @@ test("all package prices match the brief", async () => {
     ["character-grooming", "group", "monthly", 6000, null], ["character-grooming", "group", "3m", 16500, null],
     ["character-grooming", "group", "6m", 30000, null],     ["character-grooming", "private", "monthly", 13000, null],
     ["character-grooming", "private", "3m", 36000, null],   ["character-grooming", "private", "6m", 69000, null],
-    ["academic-tuition", "group", "4w", 5999, 12],          ["academic-tuition", "private", "4w", 15999, 12]]);
+    ["academic-tuition", "group", "4w", 6000, 12],          ["academic-tuition", "private", "4w", 15999, 12]]);
 });
 
 test("age groups A/B/C exist", async () => {
@@ -202,6 +202,25 @@ test("the same transaction reference cannot be used twice; wrong-state submissio
   await fails(() => db.query("select submit_payment($1,'Bank transfer','abc',null)", [b.ref]), "BAD_TXN");
 });
 
+test("RECEIPTS: a receipt is enough without a transaction ID; receipt-only payments never clash; one of them is required", async () => {
+  const k = await pkg("character-grooming", "group", "monthly"); const B = await ag("B");
+  const a = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220011", student_first_name: "Rc1" });
+  const b = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220012", student_first_name: "Rc2" });
+  const c = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220013", student_first_name: "Rc3" });
+  // nothing at all -> refused
+  await fails(() => db.query("select submit_payment($1,'JazzCash','',null,null)", [c.ref]), "RECEIPT_REQUIRED");
+  // receipt only, two different enrollments, same method: both accepted (empty IDs don't count as duplicates)
+  await q("select submit_payment($1,'JazzCash','',null,$2)", [a.ref, `${a.ref}/1.jpg`]);
+  await q("select submit_payment($1,'JazzCash','',null,$2)", [b.ref, `${b.ref}/1.jpg`]);
+  const rows = await q("select p.receipt_path, p.txn_ref, e.status, e.payment_txn_id from payments p join enrollments e on e.id = p.enrollment_id where e.ref = any($1) order by e.ref", [[a.ref, b.ref]]);
+  assert.equal(rows.length, 2);
+  for (const r of rows) { assert.match(r.receipt_path, /^ABA-.+\/1\.jpg$/); assert.equal(r.txn_ref, ""); assert.equal(r.status, "payment_submitted"); assert.equal(r.payment_txn_id, null); }
+  // receipt + ID: ID is still checked for reuse
+  await q("select submit_payment($1,'Easypaisa','RCPT-ID-7777',null,$2)", [c.ref, `${c.ref}/1.png`]);
+  const d = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220014", student_first_name: "Rc4" });
+  await fails(() => db.query("select submit_payment($1,'Easypaisa','rcpt-id-7777',null,$2)", [d.ref, `${d.ref}/1.png`]), "TXN_REUSED");
+});
+
 test("BATCHES: only verified students can be placed; capacity is enforced; refund frees the seat", async () => {
   const [prog] = await q("select id from programs where slug='character-grooming'"); const B = await ag("B");
   const k = await pkg("character-grooming", "group", "monthly");
@@ -248,4 +267,53 @@ test("re-running the script again afterwards still keeps everything", async () =
   await db.exec(NEW);
   assert.equal((await q("select count(*)::int n from enrollments"))[0].n, before);
   assert.equal((await q("select count(*)::int n from packages"))[0].n, 8);
+});
+
+test("DELETE: unpaid enrollments can be deleted (with their payment and orphaned child/parent); paid ones are protected", async () => {
+  await q("update class_batches set active=false");   // earlier tests leave full batches behind; seats are not what this test is about
+  const k = await pkg("character-grooming", "group", "monthly"); const B = await ag("B");
+  // unpaid but with a submitted payment + receipt
+  const a = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220021", student_first_name: "Del1" });
+  await q("select submit_payment($1,'JazzCash','',null,$2)", [a.ref, `${a.ref}/1.jpg`]);
+  const before = (await q("select parent_id, student_id from enrollments where ref=$1", [a.ref]))[0];
+  const r = (await q("select delete_enrollment((select id from enrollments where ref=$1)) as r", [a.ref]))[0].r;
+  assert.equal(r.ref, a.ref); assert.deepEqual(r.receipts, [`${a.ref}/1.jpg`]);
+  assert.equal((await q("select count(*)::int n from enrollments where ref=$1", [a.ref]))[0].n, 0);
+  assert.equal((await q("select count(*)::int n from payments where receipt_path=$1", [`${a.ref}/1.jpg`]))[0].n, 0);
+  assert.equal((await q("select count(*)::int n from students where id=$1", [before.student_id]))[0].n, 0);
+  assert.equal((await q("select count(*)::int n from parents where id=$1", [before.parent_id]))[0].n, 0);
+
+  // a sibling keeps the parent record alive
+  const s1 = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220022", student_first_name: "Sib1" });
+  const s2 = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220022", student_first_name: "Sib2" });
+  const par = (await q("select parent_id from enrollments where ref=$1", [s1.ref]))[0].parent_id;
+  await q("select delete_enrollment((select id from enrollments where ref=$1))", [s1.ref]);
+  assert.equal((await q("select count(*)::int n from parents where id=$1", [par]))[0].n, 1);
+  assert.equal((await q("select count(*)::int n from enrollments where ref=$1", [s2.ref]))[0].n, 1);
+
+  // paid (verified) enrollment is protected, and so is a refunded one
+  const p = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220023", student_first_name: "Paid1" });
+  await q("select submit_payment($1,'JazzCash','PAID-DEL-0001',null,null)", [p.ref]);
+  const pay = (await q("select id from payments where txn_ref='PAID-DEL-0001'"))[0];
+  await q("select verify_payment($1,'admin@test',6000)", [pay.id]);
+  await fails(() => db.query("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]), "ENROLLMENT_PROTECTED");
+  await q("select refund_enrollment((select id from enrollments where ref=$1),'admin@test','test')", [p.ref]);
+  await fails(() => db.query("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]), "ENROLLMENT_PROTECTED");
+  assert.equal((await q("select count(*)::int n from payments where id=$1", [pay.id]))[0].n, 1);
+  await fails(() => db.query("select delete_enrollment('00000000-0000-0000-0000-000000000000')"), "ENROLLMENT_NOT_FOUND");
+});
+
+test("TUITION: parent chooses All subjects or Compulsory subjects at one price; a choice is required", async () => {
+  await q("update class_batches set active=false");
+  const t = await pkg("academic-tuition", "group", "4w");
+  assert.equal(t.price_pkr, 6000);
+  const all = await enroll({ package_id: t.id, school_grade: "Grade 6", subject_id: null, subject_choice: "all", whatsapp: "923002220031", student_first_name: "TuAll" });
+  const comp = await enroll({ package_id: t.id, school_grade: "Grade 6", subject_id: null, subject_choice: "compulsory", whatsapp: "923002220032", student_first_name: "TuComp" });
+  assert.equal(all.amount, 6000); assert.equal(comp.amount, 6000);                         // same price for both choices
+  const rows = await q("select ref, subject_name, subject_id, amount_pkr from enrollments where ref = any($1) order by subject_name", [[all.ref, comp.ref]]);
+  assert.deepEqual(rows.map((r) => r.subject_name), ["All subjects", "Compulsory subjects"]);
+  assert.ok(rows.every((r) => r.subject_id === null && r.amount_pkr === 6000));
+  await fails(() => enroll({ package_id: t.id, school_grade: "Grade 6", subject_id: null, subject_choice: "", whatsapp: "923002220033" }), "SUBJECT_REQUIRED");
+  await fails(() => enroll({ package_id: t.id, school_grade: "Grade 6", subject_id: null, subject_choice: "everything", whatsapp: "923002220034" }), "SUBJECT_REQUIRED");
+  await fails(() => enroll({ package_id: t.id, school_grade: "", subject_id: null, subject_choice: "all", whatsapp: "923002220035" }), "GRADE_REQUIRED");
 });

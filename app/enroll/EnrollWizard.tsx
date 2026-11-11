@@ -18,6 +18,11 @@ type Props = {
 };
 
 const GRADES = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Other"];
+type SubjectChoice = "all" | "compulsory";
+const SUBJECT_CHOICES: [SubjectChoice, string, string][] = [
+  ["all", "All subjects", "Every subject we teach."],
+  ["compulsory", "Compulsory subjects", "Only the compulsory subjects."],
+];
 const STEPS = ["Service", "Class type", "Package", "Student", "Details", "Review"];
 
 export default function EnrollWizard(p: Props) {
@@ -37,7 +42,7 @@ export default function EnrollWizard(p: Props) {
   const [age, setAge] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
   const [grade, setGrade] = useState("");
-  const [subjectId, setSubjectId] = useState("");
+  const [subjectChoice, setSubjectChoice] = useState<SubjectChoice | "">("");
   const [f, setF] = useState({ parent_name: "", whatsapp: "", email: "", city: "", student_first_name: "", timing: "", consent: false, website: "" });
   const [step, setStep] = useState(0);
   const [err, setErr] = useState("");
@@ -91,7 +96,7 @@ export default function EnrollWizard(p: Props) {
   const set = (k: keyof typeof f, v: string | boolean) => { touched(); setF((o) => ({ ...o, [k]: v })); };
 
   function chooseProgram(id: string) {
-    setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectId("");
+    setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectChoice("");
     const ts = typesFor(id);
     if (ts.length === 1) chooseType(ts[0], id);   // only one class type on offer: nothing to choose
     else go(1);
@@ -118,7 +123,7 @@ export default function EnrollWizard(p: Props) {
     if (s === 3) {
       if (!ageOk) return "Please enter the student's age (3 to 19).";
       if (!tuition && !ageGroupId) return eligible.length ? "Please choose an age group." : "Character Grooming is for ages 5 to 15. Please message us on WhatsApp for other ages.";
-      if (tuition && (!grade || !subjectId)) return "Please select the school grade and the subject.";
+      if (tuition && (!grade || !subjectChoice)) return "Please select the school grade and choose All subjects or Compulsory subjects.";
     }
     if (s === 4) {
       if (f.parent_name.trim().length < 2) return "Please enter the parent's full name.";
@@ -145,7 +150,7 @@ export default function EnrollWizard(p: Props) {
         package_id: pkg.id, expected_amount: totalPayable(pkg),
         parent_name: f.parent_name, whatsapp: f.whatsapp, email: f.email, city: f.city,
         student_first_name: f.student_first_name, student_age: ageNum,
-        age_group_id: tuition ? "" : ageGroupId, school_grade: tuition ? grade : "", subject_id: tuition ? subjectId : "",
+        age_group_id: tuition ? "" : ageGroupId, school_grade: tuition ? grade : "", subject_choice: tuition ? subjectChoice : "",
         preferred_timing: timingText, preferred_batch_id: batchId, consent: f.consent, website: f.website,
         source: currentSource(), utm: Object.fromEntries(Object.entries(camp).filter(([, v]) => v)), session_id: sessionId(),
         ...metaBrowserIds(),
@@ -249,7 +254,7 @@ export default function EnrollWizard(p: Props) {
         {step === 2 && program && classType && (
           <div>
             <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
-            {tuition && <p className="mt-1 text-slate-600">12 live sessions over 4 weeks.</p>}
+            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions over 4 weeks." : "Pay monthly, or pay ahead and save."}</p>
             <div className="mt-5 grid gap-3">
               {options.map((o) => {
                 const sv = savings(o, monthlyPackage(p.packages, programId, classType));
@@ -309,18 +314,27 @@ export default function EnrollWizard(p: Props) {
             )}
 
             {tuition && (
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
+              <div className="mt-5 space-y-5">
+                <div className="max-w-xs">
                   <label className="label" htmlFor="grade">School grade</label>
                   <select id="grade" className="input" value={grade} onChange={(e) => { touched(); setGrade(e.target.value); }}>
                     <option value="">Select grade</option>{GRADES.map((g) => <option key={g}>{g}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="label" htmlFor="subject">Subject</label>
-                  <select id="subject" className="input" value={subjectId} onChange={(e) => { touched(); setSubjectId(e.target.value); }}>
-                    <option value="">Select subject</option>{p.subjects.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                  <p className="label">Which subjects?</p>
+                  <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Subjects">
+                    {SUBJECT_CHOICES.map(([key, title, note]) => (
+                      <button key={key} type="button" role="radio" aria-checked={subjectChoice === key} onClick={() => { touched(); setSubjectChoice(key); }} className={card(subjectChoice === key)}>
+                        <span className="flex items-center gap-2">
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${subjectChoice === key ? "border-emerald bg-emerald text-white" : "border-slate-300"}`}>{subjectChoice === key && <Check size={12} />}</span>
+                          <span className="text-lg font-bold text-navy">{title}</span>
+                        </span>
+                        <span className="mt-1 block pl-7 text-sm text-slate-600">{note}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-emerald-700">Same price for both choices.</p>
                 </div>
               </div>
             )}
@@ -362,7 +376,7 @@ export default function EnrollWizard(p: Props) {
             <dl className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
               {([
                 ["Service", program.name], ["Class type", CLASS_TYPE_LABEL[classType]], ["Package", pkg.label],
-                ...(tuition ? [["School grade", grade], ["Subject", p.subjects.find((s) => s.id === subjectId)?.name ?? ""]] : [["Age group", group ? `${group.label} (ages ${group.min_age}–${group.max_age})` : ""]]),
+                ...(tuition ? [["School grade", grade], ["Subjects", SUBJECT_CHOICES.find(([k]) => k === subjectChoice)?.[1] ?? ""]] : [["Age group", group ? `${group.label} (ages ${group.min_age}–${group.max_age})` : ""]]),
                 ["Student", `${f.student_first_name}, age ${age}`], ["Parent", f.parent_name], ["WhatsApp", f.whatsapp], ["City", f.city],
                 ["Preferred timing", f.timing.startsWith("batch:") ? (matchingBatches.find((b) => b.id === f.timing.slice(6))?.name ?? "") : f.timing || "No preference"],
               ] as string[][]).map(([k, v]) => <div key={k} className="flex justify-between gap-4 p-3"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-navy">{v}</dd></div>)}
@@ -374,7 +388,7 @@ export default function EnrollWizard(p: Props) {
             </div>
             <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-slate-600">
               <li>Pay by JazzCash, Easypaisa or bank.</li>
-              <li>Enter your transaction ID.</li>
+              <li>Upload your payment receipt.</li>
               <li>Get your class details on WhatsApp.</li>
             </ol>
           </div>

@@ -34,7 +34,7 @@ export default async function PayPage({ params }: { params: { ref: string } }) {
 
         {e.status === "rejected" && (
           <p role="alert" className="mt-4 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700">
-            We could not find your previous payment. Please check the transaction ID and submit it again, or message us on WhatsApp.
+            We could not find your previous payment. Please check your receipt and upload it again, or message us on WhatsApp.
           </p>
         )}
         {e.status === "refunded" && <p className="mt-4 rounded-2xl bg-slate-100 p-4 text-slate-700">This enrollment was refunded and is closed. Please start a new enrollment.</p>}
@@ -76,7 +76,7 @@ export default async function PayPage({ params }: { params: { ref: string } }) {
         {e.status !== "refunded" && <PayForm refCode={e.ref} methods={ready.length ? ready.map((m) => m.name) : ["JazzCash", "Easypaisa", "Bank transfer"]} amount={e.amount_pkr} />}
 
         <p className="mt-6 text-sm text-slate-600">
-          Your child is enrolled only after we verify your payment. We never approve a payment from a screenshot. If a class cannot start, you get a full refund.
+          Your child is enrolled only after we confirm the money has arrived in our account. If a class cannot start, you get a full refund.
           Read our <a className="underline" href="/refund-policy" target="_blank">Refund Policy</a>.
         </p>
       </div>

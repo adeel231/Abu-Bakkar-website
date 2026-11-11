@@ -35,7 +35,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
         ) : (
           <div className="mt-6">
             <EnrollWizard
-              programs={programs} packages={c.packages.filter((k) => k.months === 1 && k.class_type === "group")} ageGroups={c.ageGroups}
+              programs={programs} packages={c.packages.filter((k) => k.class_type === "group")} ageGroups={c.ageGroups}
               subjects={c.subjects.map((s) => ({ id: s.id, name: s.name }))}
               batches={c.batches.map((b) => ({ id: b.id, name: b.name, program_id: b.program_id, class_type: b.class_type, age_group_id: b.age_group_id, timing: b.timing, capacity: b.capacity, left: b.left, active: b.active }))}
               timingOptions={timingOptions} threshold={c.threshold} whatsapp={WHATSAPP}

@@ -23,7 +23,7 @@ const PACKAGES = [
   { name: "Character · Private · Monthly", q: "program=character-grooming&type=private&term=monthly", price: 13000, age: 10 },
   { name: "Character · Private · 3 Months", q: "program=character-grooming&type=private&term=3m", price: 36000, age: 14 },
   { name: "Character · Private · 6 Months", q: "program=character-grooming&type=private&term=6m", price: 69000, age: 7 },
-  { name: "Tuition · Group · 4 weeks", q: "program=academic-tuition&type=group", price: 5999, age: 11, tuition: true },
+  { name: "Tuition · Group · 4 weeks", q: "program=academic-tuition&type=group", price: 6000, age: 11, tuition: true },
   { name: "Tuition · Private · 4 weeks", q: "program=academic-tuition&type=private", price: 15999, age: 12, tuition: true },
 ];
 

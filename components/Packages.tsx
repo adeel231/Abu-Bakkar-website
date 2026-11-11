@@ -1,4 +1,4 @@
-import { Check, GraduationCap, User, Users } from "lucide-react";
+import { Check, GraduationCap, ShieldCheck, User, Users } from "lucide-react";
 import { EnrollLink } from "./Tracker";
 import {
   CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, isLimited, monthlyPackage, plan, seatsFor, type ClassType,
@@ -8,6 +8,17 @@ import type { Catalog } from "@/lib/db";
 const TYPES: ClassType[] = ["group", "private"];
 /** Only the Group plan is shown for Character Grooming. */
 const CHARACTER_TYPES: ClassType[] = ["group"];
+
+/** What a Character Grooming family gets. Only things the academy already promises on the site (no invented extras). Keep copy free of commas. */
+const INCLUDED: string[] = [
+  "Live interactive classes with a teacher",
+  "Real life character practice: respect and patience and honesty",
+  "Confidence and speaking practice through role play",
+  "Islamic values explained with everyday examples",
+  "Small practical activities to try at home",
+  "Parent guidance and feedback",
+  "Boys and girls welcome in age based groups",
+];
 
 function status(c: Catalog, programId: string, type: ClassType, withGroups: boolean) {
   const combos = withGroups ? c.ageGroups.map((g) => seatsFor(c.batches, programId, type, g.id)) : [seatsFor(c.batches, programId, type, null)];
@@ -46,14 +57,26 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
                 </div>
                 <p className="mt-2 text-slate-600">{CLASS_TYPE_BLURB[t]}</p>
 
-                <p className="mt-6 font-serif text-5xl font-extrabold">{formatPKR(monthly.price_pkr)}<span className="ml-2 font-sans text-lg font-medium text-slate-500">/ month</span></p>
+                <p className="mt-6 font-serif text-4xl font-extrabold sm:text-5xl">{formatPKR(monthly.price_pkr)}<span className="ml-2 whitespace-nowrap font-sans text-lg font-medium text-slate-500">/ month</span></p>
                 <ul className="mt-4 space-y-2 text-slate-700">
                   {monthly.schedule_note.split("·").map((x) => x.trim()).filter(Boolean).map((x) => (
-                    <li key={x} className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{x}</li>
+                    <li key={x} className="flex items-start gap-2 font-semibold text-navy"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{x}</li>
                   ))}
-                  <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />Live online · Islamic manners · Practical activities</li>
-                  <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{t === "group" ? "Small group of children of a similar age" : "Teacher's full attention on your child"}</li>
                 </ul>
+
+                <div className="mt-5 border-t border-slate-100 pt-5">
+                  <p className="text-sm font-bold uppercase tracking-wide text-slate-500">What your child gets</p>
+                  <ul className="mt-3 space-y-2 text-slate-700">
+                    {INCLUDED.map((x) => (
+                      <li key={x} className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{x}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <p className="mt-5 flex items-start gap-2 text-sm text-slate-600">
+                  <ShieldCheck size={18} className="mt-0.5 shrink-0 text-emerald" />
+                  Full refund if we cannot start your class. You see the total before you pay.
+                </p>
 
                 <div className="mt-auto pt-6">
                   {st.full ? (
@@ -77,7 +100,6 @@ export function AgeGroups({ c }: { c: Catalog }) {
     <section id="age-groups" className="bg-slate-50 text-navy">
       <div className="section">
         <h2 className="h2 text-center">Age Groups</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Every child learns with children of a similar age. Boys and girls can both enroll.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {c.ageGroups.map((g) => (
             <div key={g.id} className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">

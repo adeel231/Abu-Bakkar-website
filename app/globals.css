@@ -27,6 +27,11 @@ body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -appl
     -webkit-mask-image: linear-gradient(to right, #000 70%, transparent 100%);
     mask-image: linear-gradient(to right, #000 70%, transparent 100%);
   }
+  /* Mirrored version (photo on the right): fades at its left edge instead. */
+  .prog-photo.prog-photo-right {
+    -webkit-mask-image: linear-gradient(to left, #000 70%, transparent 100%);
+    mask-image: linear-gradient(to left, #000 70%, transparent 100%);
+  }
 }
 
 

@@ -118,12 +118,21 @@ export default async function Home() {
       <AgeGroups c={c} />
 
       {/* TEACHERS */}
-      <section className="bg-white text-navy">
-        <div className="section">
-          <h2 className="h2 text-center">Taught by Qualified, Verified Teachers</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+      <section className="relative isolate overflow-hidden bg-white text-navy">
+        {/* Same layout as the program banner, mirrored: the photo sits on the RIGHT and fades into the white on its inner edge. */}
+        <div aria-hidden className="prog-photo prog-photo-right h-72 w-full bg-cover bg-no-repeat bg-[position:62%_22%] sm:h-96 lg:absolute lg:inset-y-0 lg:right-0 lg:-z-10 lg:h-auto lg:w-[46%] lg:bg-[position:62%_20%]"
+          style={{ backgroundImage: "url(/hero-man.webp)" }} />
+
+        <div className="mx-auto flex max-w-6xl flex-col justify-center px-5 py-14 md:py-16 lg:mx-0 lg:min-h-[32rem] lg:max-w-none lg:pl-[8vw] lg:pr-[48%]">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-gold">Our Teachers</p>
+          <h2 className="mt-3 font-serif text-4xl font-bold leading-[1.05] md:text-5xl">Taught by Qualified, Verified Teachers</h2>
+
+          <div className="mt-8 w-full max-w-md divide-y divide-[#e3d8bc] rounded-2xl border border-[#e3d8bc] bg-[#fbf7ec] px-5 py-1 text-[#14241c] shadow-[0_2px_10px_rgba(80,60,10,0.08)]">
             {([[GraduationCap, "Qualified", "Classes are taught by qualified teachers for each age group."], [ShieldCheck, "Child-safe", "Live classes with parent-approved joining links."], [TrendingUp, "Parent feedback", "Regular guidance and updates so you see your child’s growth."]] as [LucideIcon, string, string][]).map(([Icon, t, d]) => (
-              <div key={t} className="rounded-2xl bg-white p-6 shadow-sm"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Icon size={24} /></span><p className="mt-2 font-bold text-navy">{t}</p><p className="mt-1 text-sm text-slate-600">{d}</p></div>
+              <div key={t} className="flex items-start gap-3 py-3.5">
+                <Icon className="mt-0.5 h-6 w-6 shrink-0 text-[#0b5a3e]" />
+                <div><p className="font-bold">{t}</p><p className="mt-0.5 text-sm text-[#2f3b35]">{d}</p></div>
+              </div>
             ))}
           </div>
         </div>
@@ -170,11 +179,17 @@ export default async function Home() {
       </div></section>
 
       {/* FINAL CTA */}
-      <section className="border-t border-gold/40 bg-gradient-to-br from-[#0a4a36] to-[#052a1f] text-center text-white">
-        <div className="mx-auto max-w-3xl px-5 py-16 md:py-20">
-          <h2 className="font-serif text-3xl font-bold md:text-5xl">Your Child’s Best Chapter Can Begin Today</h2>
-          <p className="mt-3 text-white/85">Sirf Taleem Nahi, Tarbiyat Bhi.</p>
-          <EnrollLink href={enrollHref} className="btn-gold mt-8 !px-10 !py-4 text-lg">ENROLL NOW</EnrollLink>
+      <section className="relative overflow-hidden border-t border-gold/40 bg-gradient-to-br from-[#0a4a36] to-[#052a1f] text-white">
+        <div className="mx-auto grid max-w-5xl items-end px-5 pt-14 md:grid-cols-[1.3fr_0.7fr] md:pt-0">
+          <div className="pb-10 text-center md:py-24 md:text-left">
+            <h2 className="font-serif text-3xl font-bold md:text-5xl">Your Child’s Best Chapter Can Begin Today</h2>
+            <p className="mt-3 text-white/85">Sirf Taleem Nahi, Tarbiyat Bhi.</p>
+            <EnrollLink href={enrollHref} className="btn-gold mt-8 !px-10 !py-4 text-lg">ENROLL NOW</EnrollLink>
+          </div>
+          {/* Photo stands on the bottom edge of the band (no glow or shadow). */}
+          <div className="relative mx-auto flex h-72 w-full max-w-[17rem] items-end justify-center md:h-[27rem] md:max-w-none">
+            <img src="/sh.webp" alt="" loading="lazy" decoding="async" className="relative h-full w-auto max-w-full object-contain object-bottom" />
+          </div>
         </div>
       </section>
 

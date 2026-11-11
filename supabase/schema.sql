@@ -185,9 +185,20 @@ create table if not exists payments (
   admin_note text
 );
 create index if not exists payments_enrollment_idx on payments(enrollment_id);
--- The same transaction reference can't be claimed twice (typo or fraud protection).
-create unique index if not exists payments_txn_unique on payments (lower(method), lower(regexp_replace(txn_ref, '\s', '', 'g')))
-  where status in ('submitted','verified');
+-- Parents upload a photo/screenshot of their receipt; the transaction ID is optional.
+alter table payments add column if not exists receipt_path text;   -- file in the private "receipts" storage bucket
+-- The same transaction reference can't be claimed twice (typo or fraud protection). Empty IDs (receipt only) never clash.
+drop index if exists payments_txn_unique;
+create unique index payments_txn_unique on payments (lower(method), lower(regexp_replace(txn_ref, '\s', '', 'g')))
+  where status in ('submitted','verified') and btrim(txn_ref) <> '';
+
+-- Private storage bucket for receipts (only the server can read it; admins see them through short-lived links).
+do $$
+begin
+  if exists (select 1 from information_schema.schemata where schema_name = 'storage') then
+    insert into storage.buckets (id, name, public) values ('receipts', 'receipts', false) on conflict (id) do nothing;
+  end if;
+end $$;
 
 create table if not exists admin_users (
   id uuid primary key default gen_random_uuid(),
@@ -250,7 +261,7 @@ declare
   v_pkg packages%rowtype; v_prog programs%rowtype; v_ag age_groups%rowtype; v_subj subjects%rowtype;
   v_age int; v_wa text := p->>'whatsapp'; v_first text := trim(p->>'student_first_name');
   v_parent uuid; v_student uuid; v_ref text; v_id uuid; v_has boolean; v_left int; v_ex enrollments%rowtype;
-  v_grade text := nullif(trim(coalesce(p->>'school_grade','')), '');
+  v_grade text := nullif(trim(coalesce(p->>'school_grade','')), ''); v_subject_label text;
   v_alpha constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; v_try int := 0;
 begin
   if coalesce((p->>'consent')::boolean, false) is not true then raise exception 'CONSENT_REQUIRED'; end if;
@@ -275,8 +286,15 @@ begin
     if v_age < v_ag.min_age or v_age > v_ag.max_age then raise exception 'AGE_GROUP_MISMATCH'; end if;
   else
     if v_grade is null then raise exception 'GRADE_REQUIRED'; end if;
-    select * into v_subj from subjects where id = (p->>'subject_id')::uuid and active;
-    if not found then raise exception 'SUBJECT_REQUIRED'; end if;
+    -- Tuition is one price for the parent's choice: "all" subjects or the "compulsory" subjects. (A single subject_id is still accepted.)
+    if nullif(p->>'subject_id', '') is not null then
+      select * into v_subj from subjects where id = (p->>'subject_id')::uuid and active;
+      if not found then raise exception 'SUBJECT_REQUIRED'; end if;
+    elsif p->>'subject_choice' in ('all', 'compulsory') then
+      v_subject_label := case p->>'subject_choice' when 'all' then 'All subjects' else 'Compulsory subjects' end;
+    else
+      raise exception 'SUBJECT_REQUIRED';
+    end if;
   end if;
 
   -- If batches exist for this choice and every one is full, stop taking money for it.
@@ -323,30 +341,32 @@ begin
     trim(p->>'city'), v_prog.id, nullif(trim(coalesce(p->>'preferred_timing','')), ''),
     v_pkg.price_pkr, 'pending', coalesce(nullif(p->>'source',''), 'direct'), p->'utm', now(), 'v1',
     v_parent, v_student, v_pkg.id, v_prog.name, v_pkg.class_type, v_pkg.duration_key, v_pkg.months, v_pkg.label,
-    v_ag.id, v_subj.id, v_subj.name, nullif(p->>'preferred_batch_id','')::uuid, nullif(p->>'fbp',''), nullif(p->>'fbc','')
+    v_ag.id, v_subj.id, coalesce(v_subj.name, v_subject_label), nullif(p->>'preferred_batch_id','')::uuid, nullif(p->>'fbp',''), nullif(p->>'fbc','')
   ) returning id into v_id;
 
   return jsonb_build_object('ref', v_ref, 'amount', v_pkg.price_pkr, 'enrollment_id', v_id, 'existing', false);
 end $$;
 
--- Parent submits the transaction reference. This does NOT confirm anything; it only queues it for the admin.
-create or replace function submit_payment(p_ref text, p_method text, p_txn text, p_note text) returns jsonb
+-- Parent submits the receipt (and optionally the transaction reference). This does NOT confirm anything; it only queues it for the admin.
+drop function if exists submit_payment(text, text, text, text);
+create or replace function submit_payment(p_ref text, p_method text, p_txn text, p_note text, p_receipt text default null) returns jsonb
 language plpgsql as $$
-declare e enrollments%rowtype; v_pay uuid;
+declare e enrollments%rowtype; v_pay uuid; v_txn text := trim(coalesce(p_txn, '')); v_receipt text := nullif(trim(coalesce(p_receipt, '')), '');
 begin
   select * into e from enrollments where ref = p_ref for update;
   if not found then raise exception 'ENROLLMENT_NOT_FOUND'; end if;
   if e.status = 'verified' then raise exception 'ALREADY_VERIFIED'; end if;
   if e.status = 'payment_submitted' then raise exception 'ALREADY_SUBMITTED'; end if;
   if e.status = 'refunded' then raise exception 'ENROLLMENT_CLOSED'; end if;
-  if length(trim(coalesce(p_txn, ''))) < 4 then raise exception 'BAD_TXN'; end if;
+  if v_receipt is null and v_txn = '' then raise exception 'RECEIPT_REQUIRED'; end if;
+  if v_txn <> '' and length(v_txn) < 4 then raise exception 'BAD_TXN'; end if;
   begin
-    insert into payments(enrollment_id, method, txn_ref, amount_pkr, status, note)
-    values (e.id, p_method, trim(p_txn), e.amount_pkr, 'submitted', nullif(trim(coalesce(p_note, '')), ''))
+    insert into payments(enrollment_id, method, txn_ref, amount_pkr, status, note, receipt_path)
+    values (e.id, p_method, v_txn, e.amount_pkr, 'submitted', nullif(trim(coalesce(p_note, '')), ''), v_receipt)
     returning id into v_pay;
   exception when unique_violation then raise exception 'TXN_REUSED';
   end;
-  update enrollments set status = 'payment_submitted', payment_method = p_method, payment_txn_id = trim(p_txn),
+  update enrollments set status = 'payment_submitted', payment_method = p_method, payment_txn_id = nullif(v_txn, ''),
          payment_note = nullif(trim(coalesce(p_note, '')), '') where id = e.id;
   return jsonb_build_object('payment_id', v_pay, 'ref', e.ref);
 end $$;
@@ -394,6 +414,30 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+-- Delete an enrollment that never became a paid student (test / abandoned / rejected). Paid records are protected.
+-- Also removes its payment rows, and the student / parent record if nothing else uses them. Returns the receipt files to delete.
+create or replace function delete_enrollment(p_enrollment uuid) returns jsonb language plpgsql as $$
+declare e enrollments%rowtype; v_paths text[];
+begin
+  select * into e from enrollments where id = p_enrollment for update;
+  if not found then raise exception 'ENROLLMENT_NOT_FOUND'; end if;
+  if e.status in ('verified','refunded')
+     or exists (select 1 from payments p where p.enrollment_id = e.id and p.status in ('verified','refunded')) then
+    raise exception 'ENROLLMENT_PROTECTED';
+  end if;
+  select coalesce(array_agg(receipt_path) filter (where receipt_path is not null), '{}') into v_paths from payments where enrollment_id = e.id;
+  delete from payments where enrollment_id = e.id;
+  delete from enrollments where id = e.id;
+  if e.student_id is not null and not exists (select 1 from enrollments where student_id = e.student_id) then
+    delete from students where id = e.student_id;
+  end if;
+  if e.parent_id is not null and not exists (select 1 from enrollments where parent_id = e.parent_id)
+     and not exists (select 1 from students where parent_id = e.parent_id) then
+    delete from parents where id = e.parent_id;
+  end if;
+  return jsonb_build_object('ref', e.ref, 'receipts', to_jsonb(v_paths));
+end $$;
+
 -- Put an enrolled student into a class batch (or take them out with a null batch).
 create or replace function assign_batch(p_enrollment uuid, p_batch uuid) returns jsonb
 language plpgsql as $$
@@ -438,8 +482,8 @@ begin
                              'students','class_batches','payments','admin_users'] loop
       execute format('revoke all on table %I from anon, authenticated', t);
     end loop;
-    foreach f in array array['create_enrollment(jsonb)','submit_payment(text,text,text,text)','verify_payment(uuid,text,int)',
-                             'reject_payment(uuid,text,text)','refund_enrollment(uuid,text,text)','assign_batch(uuid,uuid)',
+    foreach f in array array['create_enrollment(jsonb)','submit_payment(text,text,text,text,text)','verify_payment(uuid,text,int)',
+                             'reject_payment(uuid,text,text)','refund_enrollment(uuid,text,text)','delete_enrollment(uuid)','assign_batch(uuid,uuid)',
                              'seats_for(uuid,text,uuid)','enrollments_guard()'] loop
       execute format('revoke all on function %s from public, anon, authenticated', f);
     end loop;
@@ -525,7 +569,12 @@ join (values
   ('character-grooming', 'private', 'monthly', 'Monthly',  1, 13000, null,      '1 hour per session · 2 days per week', 4),
   ('character-grooming', 'private', '3m',      '3 Months', 3, 36000, null,      '1 hour per session · 2 days per week', 5),
   ('character-grooming', 'private', '6m',      '6 Months', 6, 69000, null,      '1 hour per session · 2 days per week', 6),
-  ('academic-tuition',   'group',   '4w',      '4 Weeks',  1,  5999, 12,        '12 sessions over 4 weeks', 7),
+  ('academic-tuition',   'group',   '4w',      '4 Weeks',  1,  6000, 12,        '12 sessions over 4 weeks', 7),
   ('academic-tuition',   'private', '4w',      '4 Weeks',  1, 15999, 12,        '12 sessions over 4 weeks', 8)
 ) as v(slug, class_type, duration_key, label, months, price, sessions, note, sort) on v.slug = p.slug
 on conflict (program_id, class_type, duration_key) do nothing;
+
+-- Academic Tuition (group, 4 weeks) is now Rs. 6,000, the same as Character Grooming — only if the old price was never edited.
+update packages set price_pkr = 6000
+ where duration_key = '4w' and class_type = 'group' and price_pkr = 5999
+   and program_id = (select id from programs where slug = 'academic-tuition');

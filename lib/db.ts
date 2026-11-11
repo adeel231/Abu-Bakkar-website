@@ -30,7 +30,7 @@ export type EnrollmentRow = {
 export type PaymentRow = {
   id: string; enrollment_id: string; method: string; txn_ref: string; amount_pkr: number; amount_received: number | null;
   status: "submitted" | "verified" | "rejected" | "refunded"; note: string | null; submitted_at: string; verified_at: string | null;
-  verified_by: string | null; admin_note: string | null;
+  verified_by: string | null; admin_note: string | null; receipt_path: string | null;
 };
 
 export const dbConfigured = () => !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);

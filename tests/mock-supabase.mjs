@@ -29,6 +29,8 @@ export async function startMock({ port = 54321, seed = false } = {}) {
       else if (op === "neq") { args.push(val); c = `${col} <> $${args.length}`; }
       else if (op === "gte") { args.push(val); c = `${col} >= $${args.length}`; }
       else if (op === "lte") { args.push(val); c = `${col} <= $${args.length}`; }
+      else if (op === "lt") { args.push(val); c = `${col} < $${args.length}`; }
+      else if (op === "gt") { args.push(val); c = `${col} > $${args.length}`; }
       else if (op === "is") c = `${col} is ${val === "null" ? "null" : val}`;
       else if (op === "in") {
         const list = val.replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/^"|"$/g, ""));
@@ -66,6 +68,7 @@ export async function startMock({ port = 54321, seed = false } = {}) {
       if (req.method === "GET" || req.method === "HEAD") {
         let sql = `select ${cols(url.searchParams.get("select"))} from ${T}` + where(url.searchParams, args) + orderBy(url.searchParams.get("order"));
         if (url.searchParams.get("limit")) sql += ` limit ${parseInt(url.searchParams.get("limit"), 10)}`;
+        if (url.searchParams.get("offset")) sql += ` offset ${parseInt(url.searchParams.get("offset"), 10)}`;
         rows = (await db.query(sql, args)).rows;
       } else if (req.method === "POST") {
         const body = JSON.parse(bodyText); const list = Array.isArray(body) ? body : [body];

@@ -2,36 +2,61 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, CreditCard, Download, Heart, Megaphone, Percent, Share2, Users, Wallet } from "lucide-react";
 import { db, dbConfigured, getSettings, type EnrollmentRow } from "@/lib/db";
 import { formatPKR } from "@/lib/pricing";
+import { resolveRange } from "@/lib/range";
 import { Flash, Section, Stat } from "./ui";
+import RangeSelector from "./RangeSelector";
 
 export const dynamic = "force-dynamic";
+
+/** Supabase returns at most 1000 rows per request, so read in pages until everything is loaded. */
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown }>, cap = 100000): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; from < cap; from += 1000) {
+    const { data } = await page(from, from + 999);
+    const rows = (data ?? []) as T[];
+    out.push(...rows);
+    if (rows.length < 1000) break;
+  }
+  return out;
+}
 
 const FUNNEL: [string, string][] = [
   ["ad_click", "Ad click"], ["landing_view", "Website visits"], ["enroll_click", "Enroll button clicks"], ["form_view", "Enrollment page"],
   ["form_start", "Form started"], ["payment_started", "Checkout started"],
 ];
 
-export default async function Overview({ searchParams }: { searchParams: { msg?: string; err?: string } }) {
+type Enr = Pick<EnrollmentRow, "id" | "ref" | "status" | "amount_pkr" | "source" | "program_name" | "class_type" | "package_label" | "created_at" | "verified_at" | "utm">;
+const ENR_COLS = "id,ref,status,amount_pkr,source,program_name,class_type,package_label,created_at,verified_at,utm";
+
+export default async function Overview({ searchParams }: { searchParams: { msg?: string; err?: string; range?: string; from?: string; to?: string } }) {
   if (!dbConfigured()) return <p>Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.</p>;
   const c = db();
-  const [enr, ev, st, pay] = await Promise.all([
-    c.from("enrollments").select("id,ref,status,amount_pkr,source,program_name,class_type,package_label,created_at,verified_at,utm").order("created_at", { ascending: false }).limit(5000),
-    c.from("events").select("session_id,name,source").limit(200000),
+  const range = resolveRange(searchParams);
+  const { start, end } = range;
+  const inRange = <Q extends { gte: (c: string, v: string) => Q; lt: (c: string, v: string) => Q }>(q: Q, col: string) => (start && end ? q.gte(col, start).lt(col, end) : q);
+
+  const [created, paidThen, events, st, pay] = await Promise.all([
+    // enrollments STARTED in the period (activity, sources, completion)
+    fetchAll<Enr>((a, b) => inRange(c.from("enrollments").select(ENR_COLS), "created_at").order("created_at", { ascending: false }).order("id").range(a, b)),
+    // payments VERIFIED in the period (money received)
+    fetchAll<Enr>((a, b) => inRange(c.from("enrollments").select(ENR_COLS).eq("status", "verified"), "verified_at").order("id").range(a, b)),
+    fetchAll<{ session_id: string; name: string; source: string | null }>((a, b) => inRange(c.from("events").select("session_id,name,source"), "created_at").order("id").range(a, b)),
     getSettings(),
     c.from("payments").select("id").eq("status", "submitted"),
   ]);
-  const rows = (enr.data ?? []) as Pick<EnrollmentRow, "id" | "ref" | "status" | "amount_pkr" | "source" | "program_name" | "class_type" | "package_label" | "created_at" | "verified_at" | "utm">[];
-  const verified = rows.filter((r) => r.status === "verified");
+  const rows = created;                                           // started in the period
+  const verified = paidThen;                                      // paid (verified) in the period
   const revenue = verified.reduce((a, r) => a + r.amount_pkr, 0);
   const spend = Number(st.ad_spend_pkr || 0);
+  const allTime = range.key === "all";                            // ad spend is a lifetime figure, so cost per student only makes sense for all time
   const awaiting = pay.data?.length ?? 0;
-  const completion = rows.length ? Math.round((verified.length / rows.length) * 100) : 0;
+  const completion = rows.length ? Math.round((rows.filter((r) => r.status === "verified").length / rows.length) * 100) : 0;
 
   // distinct sessions per funnel step
   const sessions: Record<string, Set<string>> = {};
   const traffic: Record<string, Set<string>> = {};
   const shares: Record<string, number> = {};
-  for (const e of (ev.data ?? []) as any[]) {
+  for (const e of events) {
     (sessions[e.name] ??= new Set()).add(e.session_id);
     if (e.name === "landing_view") (traffic[e.source || "direct"] ??= new Set()).add(e.session_id);
     if (["share_whatsapp", "share_facebook", "promise_support", "referral_visit"].includes(e.name)) shares[e.name] = (shares[e.name] || 0) + 1;
@@ -77,15 +102,17 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
 
       <Flash sp={searchParams} />
 
+      <RangeSelector range={range} />
+
       <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} hint="Verified payments" />
-        <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} hint="Enrolled after verification" />
+        <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} hint={allTime ? "Verified payments" : "Payments verified in this period"} />
+        <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} hint={allTime ? "Enrolled after verification" : "Verified in this period"} />
         <Link href="/admin/payments" className="block">
           <Stat icon={CreditCard} l="To verify" v={String(awaiting)} hot={awaiting > 0} hint={awaiting > 0 ? "Check your statement →" : "All caught up"} />
         </Link>
-        <Stat icon={Users} l="Enrollments" v={String(rows.length)} hint="All, paid or not" />
+        <Stat icon={Users} l="Enrollments" v={String(rows.length)} hint={allTime ? "All, paid or not" : "Started in this period"} />
         <Stat icon={Percent} l="Completion" v={`${completion}%`} hint="Enrollments that paid" />
-        <Stat icon={Megaphone} l="Cost / student" v={verified.length && spend ? formatPKR(spend / verified.length) : "—"} hint={spend ? `Ad spend ${formatPKR(spend)}` : "Add ad spend in Settings"} />
+        <Stat icon={Megaphone} l="Cost / student" v={allTime && verified.length && spend ? formatPKR(spend / verified.length) : "—"} hint={!allTime ? "Ad spend is all time. Pick All time" : spend ? `Ad spend ${formatPKR(spend)}` : "Add ad spend in Settings"} />
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
@@ -114,7 +141,7 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
               })}
             </ol>
             <p className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-500">
-              Cost per website visitor: <b className="text-slate-700">{visitors && spend ? formatPKR(spend / visitors) : "—"}</b> · Visitors who started enrolling: <b className="text-slate-700">{visitors ? Math.round((rows.length / visitors) * 100) : 0}%</b>
+              Cost per website visitor: <b className="text-slate-700">{allTime && visitors && spend ? formatPKR(spend / visitors) : "—"}</b> · Visitors who started enrolling: <b className="text-slate-700">{visitors ? Math.round((rows.length / visitors) * 100) : 0}%</b>
             </p>
           </div>
         </Section>

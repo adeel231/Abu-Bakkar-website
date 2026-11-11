@@ -42,7 +42,7 @@ export default async function Confirmation({ params }: { params: { ref: string }
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Receipt</p>
               {rows.map(([k, v]) => <Row key={k} k={k} v={v} />)}
               <Row k="Amount paid" v={formatPKR(p?.amount_received ?? e.amount_pkr)} />
-              {p && <Row k="Payment" v={`${p.method} · ${p.txn_ref}`} />}
+              {p && <Row k="Payment" v={p.txn_ref ? `${p.method} · ${p.txn_ref}` : `${p.method} · receipt uploaded`} />}
               {e.verified_at && <Row k="Verified on" v={new Date(e.verified_at).toLocaleDateString("en-PK", { day: "numeric", month: "long", year: "numeric" })} />}
             </div>
             <div className="mt-5 rounded-3xl bg-emerald-50 p-5 sm:p-6">
@@ -64,7 +64,7 @@ export default async function Confirmation({ params }: { params: { ref: string }
         ) : e.status === "rejected" ? (
           <>
             <h1 className="mt-5 font-serif text-3xl font-bold text-red-700">We could not verify your payment</h1>
-            <p className="mt-3 text-slate-600">Please check the transaction ID and <Link className="underline" href={`/pay/${e.ref}`}>submit it again</Link>, or message us on WhatsApp.</p>
+            <p className="mt-3 text-slate-600">Please check your receipt and <Link className="underline" href={`/pay/${e.ref}`}>upload it again</Link>, or message us on WhatsApp.</p>
             <a className="btn-emerald mt-4" href={waHref}>Message us on WhatsApp</a>
           </>
         ) : e.status === "refunded" ? (
@@ -73,7 +73,7 @@ export default async function Confirmation({ params }: { params: { ref: string }
           <>
             <h1 className="mt-5 font-serif text-3xl font-bold text-navy">Payment received — we are verifying it</h1>
             <p className="mt-3 text-slate-600">
-              Thank you. We are checking your {p?.method ?? "payment"} {p ? `(ID ${p.txn_ref}) ` : ""}against our account. This usually takes a few hours.
+              Thank you. We are checking your {p?.method ?? "payment"} {p?.txn_ref ? `(ID ${p.txn_ref}) ` : ""}against our account. This usually takes a few hours.
               Your child is enrolled once it is verified, and you will get your confirmation and joining instructions on WhatsApp. Refresh this page to see the latest status.
             </p>
             <p className="mt-4 rounded-2xl bg-white p-4 shadow-sm">Enrollment ID: <b>{e.ref}</b> · Amount: <b>{formatPKR(e.amount_pkr)}</b></p>

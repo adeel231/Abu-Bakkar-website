@@ -17,6 +17,7 @@ const schema = z.object({
   student_first_name: z.string().trim().min(1).max(50),
   student_age: z.coerce.number().int().min(3).max(19),
   age_group_id: uuid, subject_id: uuid, preferred_batch_id: uuid,
+  subject_choice: z.enum(["all", "compulsory"]).optional().or(z.literal("")),   // tuition: all subjects or the compulsory subjects
   school_grade: text(30), preferred_timing: text(200),
   consent: z.literal(true),
   source: text(120),
@@ -48,9 +49,9 @@ export async function POST(req: Request) {
   const wa = normalisePk(d.whatsapp);
   if (!wa) return NextResponse.json({ error: "Enter a valid Pakistani WhatsApp number (e.g. 0333 1234567)." }, { status: 400 });
 
-  // Only monthly Group packages are sold now (the 3/6 month plans and Private classes were removed).
-  const { data: pk } = await db().from("packages").select("months,class_type").eq("id", d.package_id).maybeSingle();
-  if (pk && (pk.months > 1 || pk.class_type !== "group")) return NextResponse.json({ error: "This package is no longer available. Please choose the monthly group plan." }, { status: 400 });
+  // Only Group packages are sold now (Private classes were removed). Monthly, 3 and 6 month plans are all available.
+  const { data: pk } = await db().from("packages").select("class_type").eq("id", d.package_id).maybeSingle();
+  if (pk && pk.class_type !== "group") return NextResponse.json({ error: "This package is no longer available. Please choose the group plan." }, { status: 400 });
 
   const { website, whatsapp, ...rest } = d;
   void website; void whatsapp;

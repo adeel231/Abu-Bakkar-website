@@ -9,7 +9,7 @@ export default function Privacy() {
       <ul>
         <li>Parent: full name, WhatsApp number, optional email, city.</li>
         <li>Child: first name and age, plus school grade and subject for Academic Tuition. Nothing else. This is needed to place them in the right class.</li>
-        <li>Payment: method, transaction ID and amount, to verify your payment. We never see card or wallet PINs.</li>
+        <li>Payment: method, receipt image, transaction ID (if given) and amount, to verify your payment. We never see card or wallet PINs.</li>
         <li>The advertisement or link you came from (for example a campaign name), saved with your enrollment so we can see which ads work. This contains no personal details.</li>
         <li>Anonymous site analytics: pages viewed and buttons clicked.</li>
       </ul>

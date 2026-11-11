@@ -63,7 +63,7 @@ export async function rejectPayment(fd: FormData) {
   const { error } = await db().rpc("reject_payment", { p_payment: id, p_admin: admin.email, p_note: str(fd, "note") });
   if (error) back(ret, "err", friendly(error));
   revalidatePath("/admin", "layout");
-  back(ret, "msg", "Payment rejected. The parent can submit a correct transaction ID.");
+  back(ret, "msg", "Payment rejected. The parent can upload the correct receipt.");
 }
 
 export async function refundEnrollment(fd: FormData) {
@@ -87,6 +87,21 @@ export async function assignBatch(fd: FormData) {
   if (error) back(ret, "err", friendly(error));
   revalidatePath("/admin", "layout");
   back(ret, "msg", batch ? "Student assigned to the class." : "Student removed from the class.");
+}
+
+/** Delete an enrollment that was never paid (test, abandoned or rejected). Paid ones are protected by the database. */
+export async function deleteEnrollment(fd: FormData) {
+  await requireAdmin();
+  const ret = here(fd, "/admin/enrollments");
+  const id = str(fd, "id");
+  if (!uuid(id)) back(ret, "err", "Enrollment not found.");
+  const c = db();
+  const { data, error } = await c.rpc("delete_enrollment", { p_enrollment: id });
+  if (error) back(ret, "err", friendly(error, "Could not delete this enrollment."));
+  const r = data as { ref: string; receipts: string[] };
+  if (r.receipts?.length) await c.storage.from("receipts").remove(r.receipts).catch(() => {});   // remove uploaded receipt files too
+  revalidatePath("/admin", "layout");
+  back(ret, "msg", `Enrollment ${r.ref} deleted.`);
 }
 
 export async function updateEnrollment(fd: FormData) {

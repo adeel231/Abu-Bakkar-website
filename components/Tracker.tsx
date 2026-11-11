@@ -68,7 +68,7 @@ export function track(name: FunnelEvent) {
     fetch("/api/track", {
       method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
       body: JSON.stringify({ session_id: sessionId(), name, source: currentSource() }),
-    });
+    }).catch(() => {});   // tracking must never break the page (e.g. an ad-blocker blocks it)
   } catch {}
 }
 

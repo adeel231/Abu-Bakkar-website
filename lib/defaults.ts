@@ -20,7 +20,7 @@ export const DEFAULT_PACKAGES: Pkg[] = [
   pk("d4", "d-cg", "private", "monthly", "Monthly", 1, 13000, null, "1 hour per session · 2 days per week", 4),
   pk("d5", "d-cg", "private", "3m", "3 Months", 3, 36000, null, "1 hour per session · 2 days per week", 5),
   pk("d6", "d-cg", "private", "6m", "6 Months", 6, 69000, null, "1 hour per session · 2 days per week", 6),
-  pk("d7", "d-at", "group", "4w", "4 Weeks", 1, 5999, 12, "12 sessions over 4 weeks", 7),
+  pk("d7", "d-at", "group", "4w", "4 Weeks", 1, 6000, 12, "12 sessions over 4 weeks", 7),
   pk("d8", "d-at", "private", "4w", "4 Weeks", 1, 15999, 12, "12 sessions over 4 weeks", 8),
 ];
 

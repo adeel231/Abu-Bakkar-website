@@ -3,6 +3,7 @@ import { db, type EnrollmentRow, type PaymentRow } from "@/lib/db";
 import { CLASS_TYPE_LABEL, formatPKR } from "@/lib/pricing";
 import { assignBatch, refundEnrollment, updateEnrollment } from "../../actions";
 import { Badge, Flash, Section, waLink, when } from "../ui";
+import DeleteEnrollment from "../DeleteEnrollment";
 
 export const dynamic = "force-dynamic";
 const STATUSES = ["all", "pending", "payment_submitted", "verified", "rejected", "refunded"];
@@ -64,7 +65,7 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
                     <p>Preferred timing: {r.preferred_schedule || "—"}</p>
                     <p>Source: {r.source || "—"}{r.utm?.campaign ? ` · campaign: ${r.utm.campaign}` : ""}</p>
                     <p>Created {when(r.created_at)}{r.verified_at ? ` · verified ${when(r.verified_at)}` : ""}</p>
-                    {p && <p>Payment: {p.method} · <b>{p.txn_ref}</b> · {p.status}{p.amount_received ? ` · received ${formatPKR(p.amount_received)}` : ""}</p>}
+                    {p && <p>Payment: {p.method} · <b>{p.txn_ref || "receipt uploaded"}</b> · {p.status}{p.amount_received ? ` · received ${formatPKR(p.amount_received)}` : ""}</p>}
                     <div className="flex flex-wrap gap-2 pt-2">
                       <a className="btn-emerald !py-2" target="_blank" href={waLink(r.whatsapp, msg)}>WhatsApp parent</a>
                       {r.status === "payment_submitted" && <Link className="btn-gold !py-2" href="/admin/payments">Go to verify</Link>}
@@ -92,6 +93,7 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
                       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="followed_up" defaultChecked={r.followed_up} /> WhatsApp follow-up done</label>
                       <button className="btn border border-slate-300 !py-2 text-navy">Save notes</button>
                     </form>
+                    {r.status !== "verified" && r.status !== "refunded" && <DeleteEnrollment id={r.id} label={r.ref} returnTo={ret} />}
                     {r.status === "verified" && (
                       <form action={refundEnrollment} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
                         <input type="hidden" name="id" value={r.id} /><input type="hidden" name="return" value={ret} />

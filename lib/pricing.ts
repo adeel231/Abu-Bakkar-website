@@ -12,7 +12,7 @@ export type AgeGroup = { id: string; code: string; label: string; min_age: numbe
 export const CLASS_TYPE_LABEL: Record<ClassType, string> = { group: "Online Group", private: "Private One-on-One" };
 
 export const CLASS_TYPE_BLURB: Record<ClassType, string> = {
-  group: "Your child learns live with other children of a similar age. Friendly, affordable and great for confidence.",
+  group: "Your child learns live with other children of a similar age. Friendly and affordable and great for confidence.",
   private: "Your child gets the teacher's full attention in every session. Best for personal focus and flexible pace.",
 };
 
