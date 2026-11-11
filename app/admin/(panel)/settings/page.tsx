@@ -6,7 +6,7 @@ import { Flash, Section, when } from "../ui";
 export const dynamic = "force-dynamic";
 
 const GROUPS: { title: string; hint?: string; fields: [string, string, number][] }[] = [
-  { title: "Payment instructions (shown to parents on the payment page)", hint: "Fill in only the methods you really use. Empty ones are hidden from parents.", fields: [
+  { title: "Payment instructions (shown to parents on the payment page)", fields: [
     ["jazzcash_number", "JazzCash account (number and account title)", 2], ["easypaisa_number", "Easypaisa account (number and account title)", 2],
     ["bank_details", "Bank transfer details (bank, account title, account number / IBAN)", 4]] },
   { title: "Messages", fields: [["whatsapp_joining_text", "Joining instructions text (shown on the confirmation page and sent after verification)", 3]] },
@@ -27,7 +27,6 @@ export default async function Settings({ searchParams }: { searchParams: { msg?:
       <form action={updateSettings} className="space-y-6">
         {GROUPS.map((g) => (
           <Section key={g.title} title={g.title}>
-            {g.hint && <p className="mb-2 text-sm text-slate-600">{g.hint}</p>}
             <div className="space-y-3 rounded-2xl bg-white p-4 shadow-sm md:max-w-3xl">
               {g.fields.map(([k, l, rows]) => (
                 <div key={k}><label className="label" htmlFor={k}>{l}</label><textarea id={k} name={k} defaultValue={s[k] ?? ""} rows={rows} className="input !py-2" /></div>

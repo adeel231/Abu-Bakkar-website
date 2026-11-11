@@ -21,7 +21,6 @@ export default function AdminLogin({ searchParams }: { searchParams: { error?: s
           <div>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700"><Lock size={18} /></span>
             <h1 className="mt-3 text-2xl font-bold text-navy">Admin sign in</h1>
-            <p className="mt-1 text-sm text-slate-500">Manage enrollments, payments and classes.</p>
           </div>
           <div><label className="label" htmlFor="email">Email</label><input id="email" name="email" type="email" required autoFocus autoComplete="username" className="input" /></div>
           <div><label className="label" htmlFor="password">Password</label><input id="password" name="password" type="password" required autoComplete="current-password" className="input" /></div>

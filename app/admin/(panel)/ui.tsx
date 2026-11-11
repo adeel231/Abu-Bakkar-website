@@ -17,7 +17,7 @@ export function Flash({ sp }: { sp: { msg?: string; err?: string } }) {
 }
 
 /** KPI tile: label, big value, optional icon and hint line. `hot` highlights something that needs action. */
-export const Stat = ({ l, v, hot, icon: Icon, hint }: { l: string; v: string; hot?: boolean; icon?: LucideIcon; hint?: string }) => (
+export const Stat = ({ l, v, hot, icon: Icon }: { l: string; v: string; hot?: boolean; icon?: LucideIcon }) => (
   <div className={`h-full rounded-2xl border p-4 transition md:p-5 ${hot ? "border-gold bg-gold-50 shadow-md shadow-gold/10" : "border-slate-200/80 bg-white shadow-sm hover:shadow-md"}`}>
     <div className="flex items-start justify-between gap-2">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{l}</p>
@@ -28,7 +28,6 @@ export const Stat = ({ l, v, hot, icon: Icon, hint }: { l: string; v: string; ho
       )}
     </div>
     <p className="mt-2 text-2xl font-bold tracking-tight text-navy md:text-[1.7rem]">{v}</p>
-    {hint && <p className={`mt-1 text-xs ${hot ? "font-semibold text-navy" : "text-slate-500"}`}>{hint}</p>}
   </div>
 );
 
@@ -52,12 +51,11 @@ export const Badge = ({ s }: { s: string }) => (
   </span>
 );
 
-export const Section = ({ title, children, action, desc }: { title: string; children: ReactNode; action?: ReactNode; desc?: string }) => (
+export const Section = ({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) => (
   <section>
     <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 className="text-lg font-bold text-navy md:text-xl">{title}</h2>
-        {desc && <p className="mt-0.5 text-sm text-slate-500">{desc}</p>}
       </div>
       {action}
     </div>

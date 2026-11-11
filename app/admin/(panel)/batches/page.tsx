@@ -38,7 +38,6 @@ export default async function Batches({ searchParams }: { searchParams: { msg?: 
     <>
       <Flash sp={searchParams} />
       <Section title="Class batches (schedules, capacity and assigned students)">
-        <p className="mb-3 text-sm text-slate-600">Capacity drives the “Limited Seats Available” label on the website. If no batch exists for a choice, the website does not claim limited seats and does not block enrollment.</p>
         <details className="mb-4 rounded-2xl bg-white p-4 shadow-sm" open={!(bt.data?.length)}><summary className="cursor-pointer font-semibold text-navy">+ New batch</summary><div className="mt-3"><BatchForm programs={programs} groups={groups} /></div></details>
         <div className="grid gap-4 lg:grid-cols-2">
           {(bt.data ?? []).map((b: any) => {

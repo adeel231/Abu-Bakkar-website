@@ -75,30 +75,22 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   // ---- Sharing insight: per section and per sharer (an anonymous code = one browser; no names are ever collected)
   const SHARE_NAMES = ["share_whatsapp", "share_facebook", "share_copy", "share_native"];
   type SecAgg = { shares: number; wa: number; fb: number; copy: number; phone: number; people: Set<string>; visits: Set<string>; enrolled: number };
-  type ShAgg = { shares: number; sections: Set<string>; visits: Set<string>; enrolled: number; paid: number };
-  const bySec = new Map<string, SecAgg>(), bySharer = new Map<string, ShAgg>();
+  const bySec = new Map<string, SecAgg>();
   const secOf = (k: string) => { if (!bySec.has(k)) bySec.set(k, { shares: 0, wa: 0, fb: 0, copy: 0, phone: 0, people: new Set(), visits: new Set(), enrolled: 0 }); return bySec.get(k)!; };
-  const shOf = (k: string) => { if (!bySharer.has(k)) bySharer.set(k, { shares: 0, sections: new Set(), visits: new Set(), enrolled: 0, paid: 0 }); return bySharer.get(k)!; };
-  const codeFromSource = (src: string | null | undefined) => (src && src.startsWith("referral / ") ? src.slice(11) : "");
   for (const e of events) {
     if (SHARE_NAMES.includes(e.name)) {
       const o = secOf(e.section || "other"); o.shares++;
       if (e.name === "share_whatsapp") o.wa++; else if (e.name === "share_facebook") o.fb++; else if (e.name === "share_copy") o.copy++; else o.phone++;
-      if (e.rf) { o.people.add(e.rf); const sh = shOf(e.rf); sh.shares++; sh.sections.add(e.section || "other"); }
+      if (e.rf) o.people.add(e.rf);
     } else if (e.name === "landing_view") {
-      const code = e.rf || codeFromSource(e.source);
       if (e.section) secOf(e.section).visits.add(e.session_id);
-      if (code) shOf(code).visits.add(e.session_id);
     }
   }
   for (const r of rows) {
-    const code = codeFromSource(r.source);
-    if (code) { const sh = shOf(code); sh.enrolled++; if (r.status === "verified") sh.paid++; }
     const u = (r.utm ?? {}) as Record<string, string>;
     if (u.source === "share" && u.content) secOf(u.content).enrolled++;
   }
   const sectionRows = Array.from(bySec.entries()).sort((a, b) => b[1].shares - a[1].shares || b[1].visits.size - a[1].visits.size);
-  const sharerRows = Array.from(bySharer.entries()).sort((a, b) => b[1].enrolled - a[1].enrolled || b[1].shares - a[1].shares || b[1].visits.size - a[1].visits.size).slice(0, 10);
   const totalShares = sectionRows.reduce((a, [, o]) => a + o.shares, 0);
   const visitors = sessions.landing_view?.size ?? 0;
 
@@ -146,18 +138,18 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
       <RangeSelector range={range} />
 
       <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} hint={allTime ? "Verified payments" : "Payments verified in this period"} />
-        <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} hint={allTime ? "Enrolled after verification" : "Verified in this period"} />
+        <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} />
+        <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} />
         <Link href="/admin/payments" className="block">
-          <Stat icon={CreditCard} l="To verify" v={String(awaiting)} hot={awaiting > 0} hint={awaiting > 0 ? "Check your statement →" : "All caught up"} />
+          <Stat icon={CreditCard} l="To verify" v={String(awaiting)} hot={awaiting > 0} />
         </Link>
-        <Stat icon={Users} l="Enrollments" v={String(rows.length)} hint={allTime ? "All, paid or not" : "Started in this period"} />
-        <Stat icon={Percent} l="Completion" v={`${completion}%`} hint="Enrollments that paid" />
-        <Stat icon={Megaphone} l="Cost / student" v={allTime && verified.length && spend ? formatPKR(spend / verified.length) : "—"} hint={!allTime ? "Ad spend is all time. Pick All time" : spend ? `Ad spend ${formatPKR(spend)}` : "Add ad spend in Settings"} />
+        <Stat icon={Users} l="Enrollments" v={String(rows.length)} />
+        <Stat icon={Percent} l="Completion" v={`${completion}%`} />
+        <Stat icon={Megaphone} l="Cost / student" v={allTime && verified.length && spend ? formatPKR(spend / verified.length) : "—"} />
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <Section title="Visitor funnel" desc="Unique visitors reaching each step">
+        <Section title="Visitor funnel">
           <div className="rounded-2xl bg-white p-5 shadow-sm md:p-6">
             <ol className="space-y-3.5">
               {steps.map((x, i) => {
@@ -187,7 +179,7 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
           </div>
         </Section>
 
-        <Section title="Engagement" desc="Promise, shares and referrals">
+        <Section title="Engagement">
           <div className="grid grid-cols-2 gap-3">
             {engagement.map(([Icon, label, n]) => (
               <div key={label} className="rounded-2xl bg-white p-4 shadow-sm">
@@ -200,7 +192,7 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
         </Section>
       </div>
 
-      <Section title="Sharing by section" desc={`Which parts of the website get shared and what the shares bring back (${totalShares} share${totalShares === 1 ? "" : "s"} in this period)`}>
+      <Section title="Sharing by section">
         {!evs.detailed && (
           <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             To see which section each share was from, run the latest database update (<code>supabase/schema.sql</code>) once. New shares are recorded with their section after that.
@@ -217,24 +209,9 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-slate-500">“Shares” counts taps on a share option. “People” is the number of different browsers. On phones the share menu cannot tell us which app was chosen.</p>
       </Section>
 
-      <Section title="Top sharers" desc="Each code is one browser. No names, phone numbers or child details are collected.">
-        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
-          <table className="w-full min-w-[34rem] text-sm">
-            <thead><tr className="text-left"><th className="p-3 pl-5">Sharer code</th><th className="p-3 text-right">Shares</th><th className="p-3">Sections shared</th><th className="p-3 text-right">Visits brought</th><th className="p-3 text-right">Enrollments</th><th className="p-3 pr-5 text-right">Paid</th></tr></thead>
-            <tbody className="divide-y divide-slate-100">
-              {sharerRows.map(([code, o]) => (
-                <tr key={code}><td className="p-3 pl-5 font-mono text-navy">{code}</td><td className="p-3 text-right tabular-nums">{o.shares}</td><td className="p-3 text-slate-600">{Array.from(o.sections).map((x) => (x === "other" ? "Not recorded" : sectionName(x))).join(", ") || "—"}</td><td className="p-3 text-right tabular-nums">{o.visits.size}</td><td className="p-3 text-right tabular-nums">{o.enrolled}</td><td className="p-3 pr-5 text-right font-semibold tabular-nums text-navy">{o.paid}</td></tr>
-              ))}
-              {!sharerRows.length && <tr><td className="p-6 text-center text-slate-500" colSpan={6}>No shared links have been used yet.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
-      <Section title="Advertising sources and referrals" desc="Where visitors and paying students came from">
+      <Section title="Advertising sources and referrals">
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
           <table className="w-full min-w-[34rem] text-sm">
             <thead><tr className="text-left"><th className="p-3 pl-5">Source / campaign</th><th className="p-3 text-right">Visitors</th><th className="p-3 text-right">Enrollments</th><th className="p-3 text-right">Paid</th><th className="p-3 pr-5 text-right">Revenue</th></tr></thead>
@@ -244,10 +221,9 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Tip: tag every ad link with <code className="rounded bg-slate-100 px-1">?utm_source=facebook&amp;utm_campaign=your-campaign</code>. Referral shares appear as “referral / code”.</p>
       </Section>
 
-      <Section title="Revenue by package" desc="Verified payments only" action={<Link href="/admin/enrollments" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline">All enrollments <ArrowRight size={14} /></Link>}>
+      <Section title="Revenue by package" action={<Link href="/admin/enrollments" className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 hover:underline">All enrollments <ArrowRight size={14} /></Link>}>
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
           <table className="w-full min-w-[28rem] text-sm">
             <thead><tr className="text-left"><th className="p-3 pl-5">Service · class type · package</th><th className="p-3 text-right">Students</th><th className="p-3 pr-5 text-right">Revenue</th></tr></thead>

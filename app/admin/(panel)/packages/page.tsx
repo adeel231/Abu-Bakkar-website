@@ -16,7 +16,6 @@ export default async function Packages({ searchParams }: { searchParams: { msg?:
   return (
     <>
       <Flash sp={searchParams} />
-      <p className="rounded-xl bg-gold/15 p-3 text-sm text-navy">Changing a price here updates the website and checkout straight away, for <b>new</b> enrollments only. Every existing enrollment keeps the fee that was charged at its checkout.</p>
 
       {programs.map((p) => (
         <Section key={p.id} title={p.name}>
