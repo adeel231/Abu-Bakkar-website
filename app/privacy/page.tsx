@@ -15,6 +15,9 @@ export default function Privacy() {
       </ul>
       <h2>How we use it</h2>
       <p>To process enrollment and payment, send joining instructions and receipts, deliver classes, give parents progress feedback and improve the academy.</p>
+      <h2>Chat assistant</h2>
+      <p>Our website has an AI chat assistant. The messages you type into it are processed by an AI service provider to write a reply. We do not save chat transcripts. Please do not share your child’s personal details in the chat.</p>
+
       <h2>Advertising and analytics</h2>
       <p>We use Google Analytics 4 and the Meta Pixel, which set cookies in your browser, to measure our advertising. <b>We do not send your name, your child’s details, phone number or email to advertising platforms.</b> Only anonymous events (such as “page viewed”, or “purchase” with the amount, after we have verified a payment) are shared. You can block or clear these cookies in your browser settings and still enroll.</p>
       <h2>Sharing</h2>

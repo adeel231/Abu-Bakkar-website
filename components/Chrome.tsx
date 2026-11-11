@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { EnrollLink, track } from "./Tracker";
 import { Logo } from "./Brand";
 
-const NAV = [["#packages", "Packages"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
+const NAV = [["#packages", "Packages"], ["#play", "Play"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
 const wa = WHATSAPP;
 
 const PHONE = "03335767202";

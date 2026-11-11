@@ -4,6 +4,7 @@ import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, Cale
 import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
 import ShareButton from "@/components/ShareButton";
+import QuizSection from "@/components/QuizSection";
 import { AgeGroups, CharacterPackages } from "@/components/Packages";
 import { AnnouncementBar, FloatingBar, Header } from "@/components/Chrome";
 import { anyLimited, getCatalog, getPromiseCount, getSettings } from "@/lib/db";
@@ -118,6 +119,9 @@ export default async function Home() {
 
       {/* 4. PACKAGES + AGE GROUPS (primary service) */}
       <CharacterPackages c={c} wa={WHATSAPP} />
+
+      {/* Interactive game */}
+      <QuizSection />
 
       <AgeGroups c={c} />
 

@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Analytics from "@/components/Analytics";
+import ChatWidget from "@/components/ChatWidget";
+import { WHATSAPP } from "@/lib/contact";
+import { localPhone } from "@/lib/chatbot/facts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.abubakkaracademy.com"),
@@ -15,6 +18,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Analytics />
+        {/* The assistant only appears once an AI key is set in the hosting settings. */}
+        {process.env.OPENAI_API_KEY ? <ChatWidget phone={localPhone(WHATSAPP)} whatsapp={WHATSAPP} /> : null}
       </body>
     </html>
   );
