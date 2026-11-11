@@ -121,7 +121,7 @@ export default async function Home() {
       <CharacterPackages c={c} wa={WHATSAPP} />
 
       {/* Interactive game */}
-      <QuizSection />
+      <QuizSection price={price} schedule={cg ? monthlyPackage(c.packages, cg.id, "group")?.schedule_note ?? "" : ""} />
 
       <AgeGroups c={c} />
 

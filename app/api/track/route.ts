@@ -5,7 +5,7 @@ import { db, dbConfigured } from "@/lib/db";
 const schema = z.object({
   session_id: z.string().max(64),
   name: z.enum(["ad_click", "landing_view", "enroll_click", "form_view", "form_start", "payment_started",
-    "share_whatsapp", "share_facebook", "share_copy", "share_native", "promise_support", "referral_visit"]),
+    "share_whatsapp", "share_facebook", "share_copy", "share_native", "promise_support", "referral_visit", "game_start", "game_complete"]),
   source: z.string().max(120).optional(),
   section: z.string().regex(/^[a-z0-9-]{1,40}$/).optional(),   // which homepage section was shared / brought the visit
   rf: z.string().regex(/^[a-z0-9]{1,12}$/i).optional(),        // the sharer's anonymous code (one per browser, no personal data)

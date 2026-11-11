@@ -5,7 +5,8 @@ import { adEvent } from "./Analytics";
 
 export type FunnelEvent =
   | "ad_click" | "landing_view" | "enroll_click" | "form_view" | "form_start" | "payment_started" | "payment_verified"
-  | "share_whatsapp" | "share_facebook" | "share_copy" | "share_native" | "promise_support" | "referral_visit";
+  | "share_whatsapp" | "share_facebook" | "share_copy" | "share_native" | "promise_support" | "referral_visit"
+  | "game_start" | "game_complete";
 
 export function sessionId() {
   try {

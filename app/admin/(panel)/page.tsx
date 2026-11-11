@@ -138,6 +138,22 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
     [Users, "Referral visits", shares.referral_visit || 0],
   ];
 
+  // Response Challenge game (homepage #play): plays, finishes, shares, and the enrollments that came from it.
+  // A visit counts as "from the game" when the link carried utm_campaign=response_challenge or was shared from the game itself.
+  const fromGame = (r: Enr) => { const u = (r.utm ?? {}) as Record<string, string>; return u.campaign === "response_challenge" || (u.source === "share" && u.content === "play"); };
+  const gamePlays = sessions.game_start?.size ?? 0, gameDone = sessions.game_complete?.size ?? 0;
+  const gameShares = bySec.get("play")?.shares ?? 0;
+  const gameEnrolled = rows.filter(fromGame).length, gamePaid = verified.filter(fromGame);
+  const challenge: [typeof Heart, string, string][] = [
+    [Users, "Game started", gamePlays.toLocaleString("en-US")],
+    [BadgeCheck, "Game completed", gameDone.toLocaleString("en-US")],
+    [Percent, "Completion rate", gamePlays ? `${Math.round((gameDone / gamePlays) * 100)}%` : "—"],
+    [Share2, "Game shares", gameShares.toLocaleString("en-US")],
+    [Eye, "Visits from shares", (bySec.get("play")?.visits.size ?? 0).toLocaleString("en-US")],
+    [Users, "Enrollments from game", gameEnrolled.toLocaleString("en-US")],
+    [Wallet, "Paid from game", `${gamePaid.length} · ${formatPKR(gamePaid.reduce((a, r) => a + r.amount_pkr, 0))}`],
+  ];
+
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -210,6 +226,19 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
           </div>
         </Section>
       </div>
+
+      <Section title="Response Challenge game">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {challenge.map(([Icon, label, v]) => (
+            <div key={label} className="rounded-2xl bg-white p-4 shadow-sm">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-50 text-[#a77d0c]"><Icon size={16} /></span>
+              <p className="mt-3 text-2xl font-bold tabular-nums text-navy">{v}</p>
+              <p className="text-xs text-slate-500">{label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-slate-500">Social links should use <code>?utm_source=instagram&amp;utm_medium=story&amp;utm_campaign=response_challenge#play</code> so paid enrollments can be matched to the game.</p>
+      </Section>
 
       <Section title="Sharing by section">
         {!evs.detailed && (

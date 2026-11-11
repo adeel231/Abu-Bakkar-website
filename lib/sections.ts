@@ -8,6 +8,7 @@ export const SECTION_LABELS: Record<string, string> = {
   teachers: "Teachers",
   hadith: "Hadith",
   promise: "Parent Promise",
+  play: "Response Challenge game",
   journey: "How it works",
   faq: "Parent FAQs",
   join: "Final enroll section",
