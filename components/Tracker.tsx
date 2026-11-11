@@ -15,6 +15,16 @@ export function sessionId() {
   } catch { return "anon"; }
 }
 
+/** Anonymous, private id for this browser (kept in localStorage). Used only to count unique visitors: never put in links,
+ *  never tied to a name, phone or child. */
+export function visitorId() {
+  try {
+    let v = localStorage.getItem("aba_vid");
+    if (!v) { v = crypto.randomUUID().replace(/-/g, "").slice(0, 16); localStorage.setItem("aba_vid", v); }
+    return v;
+  } catch { return ""; }
+}
+
 /** Short anonymous code for this browser, put in shared links as ?rf=. Contains no student information. */
 export function myReferralCode() {
   try {
@@ -71,9 +81,10 @@ export function track(name: FunnelEvent, extra?: { section?: string; rf?: string
       const c = captureCampaign();
       if (c.source === "share") { section = c.content; rf = c.rf; }
     }
+    const visitor = visitorId();
     fetch("/api/track", {
       method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
-      body: JSON.stringify({ session_id: sessionId(), name, source: currentSource(), ...(section ? { section } : {}), ...(rf ? { rf } : {}) }),
+      body: JSON.stringify({ session_id: sessionId(), name, source: currentSource(), ...(section ? { section } : {}), ...(rf ? { rf } : {}), ...(visitor ? { visitor } : {}) }),
     }).catch(() => {});   // tracking must never break the page (e.g. an ad-blocker blocks it)
   } catch {}
 }

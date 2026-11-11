@@ -193,7 +193,7 @@ export async function saveBatch(fd: FormData) {
 
 // ---------------------------------------------------------------------------------------------------- settings and admin users
 const SETTING_KEYS = ["bank_details", "jazzcash_number", "easypaisa_number", "whatsapp_joining_text", "ad_spend_pkr",
-  "hero_hook", "hero_sub", "promise_text", "limited_seats_threshold", "timing_options"];
+  "hero_hook", "hero_sub", "promise_text", "limited_seats_threshold", "timing_options", "payment_alert_email"];
 export async function updateSettings(fd: FormData) {
   await requireAdmin();
   const { error } = await db().from("settings").upsert(SETTING_KEYS.filter((k) => fd.has(k)).map((key) => ({ key, value: String(fd.get(key) ?? "").trim() })));

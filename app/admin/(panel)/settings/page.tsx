@@ -9,7 +9,9 @@ const GROUPS: { title: string; hint?: string; fields: [string, string, number][]
   { title: "Payment instructions (shown to parents on the payment page)", fields: [
     ["jazzcash_number", "JazzCash account (number and account title)", 2], ["easypaisa_number", "Easypaisa account (number and account title)", 2],
     ["bank_details", "Bank transfer details (bank, account title, account number / IBAN)", 4]] },
-  { title: "Messages", fields: [["whatsapp_joining_text", "Joining instructions text (shown on the confirmation page and sent after verification)", 3]] },
+  { title: "Messages", fields: [
+    ["whatsapp_joining_text", "Joining instructions text (shown on the confirmation page and sent after verification)", 3],
+    ["payment_alert_email", "Email addresses that get an alert when a receipt is uploaded (separate with commas). Empty means all admin users.", 1]] },
   { title: "Website content", fields: [
     ["hero_hook", "Homepage headline (the last word is shown in gold)", 1], ["hero_sub", "Homepage supporting lines (one per line)", 2],
     ["promise_text", "Parent Promise text", 2], ["timing_options", "Preferred-timing choices on the enrollment form (one per line)", 4]] },

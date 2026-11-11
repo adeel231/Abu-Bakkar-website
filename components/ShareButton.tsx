@@ -16,7 +16,7 @@ type Props = {
   corner?: "top-right" | "bottom-right";
 };
 
-const PIN = { "top-right": "absolute right-3 top-3 z-20 md:right-5 md:top-4", "bottom-right": "absolute bottom-3 right-3 z-20 md:bottom-4 md:right-5" };
+const PIN = { "top-right": "absolute right-3 top-3 z-20 md:right-5 md:top-4", "bottom-right": "absolute bottom-3 right-3 z-20 md:bottom-4 md:right-28" };   // md+: leaves room for the floating WhatsApp button
 
 /** A small "Share" pill for one section. Phones open the phone's own share sheet; computers open a small menu. */
 export default function ShareButton({ id, title, text, tone = "light", corner }: Props) {

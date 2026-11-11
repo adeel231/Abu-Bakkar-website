@@ -76,6 +76,9 @@ alter table events add constraint events_name_check check (name in (
 alter table events add column if not exists section text;
 alter table events add column if not exists rf text;
 create index if not exists events_section_idx on events(section) where section is not null;
+-- Unique visitors: a private anonymous id per browser (no name, phone or child details).
+alter table events add column if not exists visitor text;
+create index if not exists events_visitor_idx on events(visitor) where visitor is not null;
 
 -- =====================================================================================
 -- 2. NEW TABLES

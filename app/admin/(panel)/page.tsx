@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, CreditCard, Download, Heart, Megaphone, Percent, Share2, Users, Wallet } from "lucide-react";
+import { ArrowRight, BadgeCheck, CreditCard, Download, Eye, Heart, Megaphone, Percent, Repeat, Share2, Users, Wallet } from "lucide-react";
 import { db, dbConfigured, getSettings, type EnrollmentRow } from "@/lib/db";
 import { formatPKR } from "@/lib/pricing";
 import { resolveRange } from "@/lib/range";
@@ -37,11 +37,18 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   const { start, end } = range;
   const inRange = <Q extends { gte: (c: string, v: string) => Q; lt: (c: string, v: string) => Q }>(q: Q, col: string) => (start && end ? q.gte(col, start).lt(col, end) : q);
 
-  type Ev = { session_id: string; name: string; source: string | null; section?: string | null; rf?: string | null };
-  // The section / sharer-code columns exist only after the latest database update: fall back to the plain columns until then.
-  const loadEvents = async (): Promise<{ rows: Ev[]; detailed: boolean }> => {
-    try { return { rows: await fetchAll<Ev>((a, b) => inRange(c.from("events").select("session_id,name,source,section,rf"), "created_at").order("id").range(a, b), 100000, true), detailed: true }; }
-    catch { return { rows: await fetchAll<Ev>((a, b) => inRange(c.from("events").select("session_id,name,source"), "created_at").order("id").range(a, b)), detailed: false }; }
+  type Ev = { session_id: string; name: string; source: string | null; section?: string | null; rf?: string | null; visitor?: string | null };
+  // The newer columns (section, sharer code, visitor id) exist only after the latest database update: try the richest
+  // selection first and fall back to what the database has, so the dashboard works before and after the update.
+  const EVENT_COLS = ["session_id,name,source,section,rf,visitor", "session_id,name,source,section,rf", "session_id,name,source"];
+  const loadEvents = async (): Promise<{ rows: Ev[]; detailed: boolean; hasVisitor: boolean }> => {
+    for (let i = 0; i < EVENT_COLS.length; i++) {
+      try {
+        const rows = await fetchAll<Ev>((a, b) => inRange(c.from("events").select(EVENT_COLS[i]), "created_at").order("id").range(a, b), 100000, i < EVENT_COLS.length - 1);
+        return { rows, detailed: i < 2, hasVisitor: i === 0 };
+      } catch { /* this selection is not available yet: try the next one */ }
+    }
+    return { rows: [], detailed: false, hasVisitor: false };
   };
 
   const [created, paidThen, evs, st, pay] = await Promise.all([
@@ -93,6 +100,16 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   const sectionRows = Array.from(bySec.entries()).sort((a, b) => b[1].shares - a[1].shares || b[1].visits.size - a[1].visits.size);
   const totalShares = sectionRows.reduce((a, [, o]) => a + o.shares, 0);
   const visitors = sessions.landing_view?.size ?? 0;
+  // Unique visitors = different browsers (anonymous id stored in the browser). Visits from before the id existed count once per session.
+  const byVisitor = new Map<string, Set<string>>();
+  for (const e of events) {
+    if (e.name !== "landing_view") continue;
+    const k = e.visitor ? "v:" + e.visitor : "s:" + e.session_id;
+    if (!byVisitor.has(k)) byVisitor.set(k, new Set());
+    byVisitor.get(k)!.add(e.session_id);
+  }
+  const uniqueVisitors = byVisitor.size;
+  const returningVisitors = Array.from(byVisitor.entries()).filter(([k, ss]) => k.startsWith("v:") && ss.size > 1).length;
 
   // by source
   const bySource = new Map<string, { visitors: number; enrolled: number; paid: number; revenue: number }>();
@@ -137,14 +154,16 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
 
       <RangeSelector range={range} />
 
-      <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-3 xl:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+        <Stat icon={Eye} l="Unique visitors" v={uniqueVisitors.toLocaleString("en-US")} />
+        <Stat icon={Repeat} l="Returning visitors" v={evs.hasVisitor ? returningVisitors.toLocaleString("en-US") : "—"} />
+        <Stat icon={Users} l="Enrollments" v={String(rows.length)} />
+        <Stat icon={Percent} l="Completion" v={`${completion}%`} />
         <Stat icon={Wallet} l="Revenue" v={formatPKR(revenue)} />
         <Stat icon={BadgeCheck} l="Paid students" v={String(verified.length)} />
         <Link href="/admin/payments" className="block">
           <Stat icon={CreditCard} l="To verify" v={String(awaiting)} hot={awaiting > 0} />
         </Link>
-        <Stat icon={Users} l="Enrollments" v={String(rows.length)} />
-        <Stat icon={Percent} l="Completion" v={`${completion}%`} />
         <Stat icon={Megaphone} l="Cost / student" v={allTime && verified.length && spend ? formatPKR(spend / verified.length) : "—"} />
       </section>
 

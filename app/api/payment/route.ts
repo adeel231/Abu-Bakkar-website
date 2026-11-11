@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { db, dbConfigured } from "@/lib/db";
+import { db, dbConfigured, getSettings } from "@/lib/db";
+import { CLASS_TYPE_LABEL } from "@/lib/pricing";
+import { alertRecipients, sendPaymentAlert } from "@/lib/notify";
 import { errorCode, friendly } from "@/lib/errors";
 
 const schema = z.object({
@@ -53,5 +55,26 @@ export async function POST(req: Request) {
     await c.storage.from(BUCKET).remove([path]).catch(() => {});   // don't keep files for submissions that failed
     return NextResponse.json({ error: friendly(error, "Could not submit. Please try again.") }, { status: errorCode(error) ? 400 : 500 });
   }
+
+  // Email the admin(s) so the receipt can be checked and approved. Best effort: a failed email never blocks the parent.
+  try {
+    const [enr, st, adm] = await Promise.all([
+      c.from("enrollments").select("ref,parent_name,whatsapp,child_first_name,program_name,class_type,package_label,amount_pkr").eq("ref", p.data.ref).maybeSingle(),
+      getSettings(),
+      c.from("admin_users").select("email").eq("active", true),
+    ]);
+    const e = enr.data as { ref: string; parent_name: string; whatsapp: string; child_first_name: string; program_name: string | null; class_type: "group" | "private" | null; package_label: string | null; amount_pkr: number } | null;
+    if (e) {
+      const site = process.env.NEXT_PUBLIC_SITE_URL || "https://www.abubakkaracademy.com";
+      await Promise.race([
+        sendPaymentAlert(alertRecipients(st.payment_alert_email, ((adm.data ?? []) as { email: string }[]).map((a) => a.email)), {
+          ref: e.ref, parent_name: e.parent_name, whatsapp: e.whatsapp, student: e.child_first_name, program: e.program_name ?? "",
+          classType: e.class_type ? CLASS_TYPE_LABEL[e.class_type] : "", packageLabel: e.package_label ?? "", amount: e.amount_pkr,
+          method: p.data.payment_method, txn: p.data.payment_txn_id, adminUrl: `${site}/admin/payments`,
+        }),
+        new Promise((res) => setTimeout(res, 6000)),
+      ]);
+    }
+  } catch { /* ignore */ }
   return NextResponse.json({ ok: true });
 }

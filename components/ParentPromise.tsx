@@ -4,14 +4,22 @@ import { useEffect, useState } from "react";
 import { adEvent } from "./Analytics";
 import { myReferralCode, track } from "./Tracker";
 
+/** Students and families the academy has already taught (confirmed by the academy). The counter starts here and
+ *  goes up by one for every new "I Support This Promise" press, which is the real count stored in the database. */
+const PROMISE_BASE = 1000;
+
 export default function ParentPromise({ text, count: initialCount = 0 }: { text: string; count?: number }) {
   const [supported, setSupported] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [justJoined, setJustJoined] = useState(false);
   const [url, setUrl] = useState("https://www.abubakkaracademy.com");
+  // The browser remembers if this parent already promised. Until that has been read, hide the texts that depend on it,
+  // so a returning parent never sees the "join them" wording flash before "You have made this promise".
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try { setSupported(localStorage.getItem("aba_promise") === "1"); } catch {}
+    setReady(true);
     setUrl(`${location.origin}/?rf=${myReferralCode()}&utm_source=share&utm_medium=section&utm_content=promise#promise`);
   }, []);
 
@@ -52,11 +60,23 @@ export default function ParentPromise({ text, count: initialCount = 0 }: { text:
           </blockquote>
           <div className="mx-auto mt-6 h-0.5 w-56 bg-gradient-to-r from-transparent via-gold to-transparent" />
 
-          {/* Promise counter card hidden from the page (the count is still recorded and kept). */}
+          {/* Counter: past students and families (PROMISE_BASE) plus every new promise made on this site. */}
+          <div className="mx-auto mt-8 w-full max-w-md rounded-2xl border border-gold/60 bg-white/70 px-6 py-5 shadow-sm" aria-live="polite">
+            <p className="flex items-center justify-center gap-2 text-sm font-semibold uppercase tracking-wider text-[#0b5a3e]">
+              <Users size={18} /> Our academy family
+            </p>
+            <p key={count} className={`mt-1 font-serif text-5xl font-extrabold text-[#0b3d2c] ${justJoined ? "animate-[promise-pop_0.6s_ease-out]" : ""}`}>
+              {(PROMISE_BASE + count).toLocaleString("en-US")}+
+            </p>
+            <p className={`mt-2 min-h-[2.5rem] text-sm text-[#2f3b35] transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}>
+              {justJoined ? "JazakAllah! You are one of them now." : supported ? "You have made this promise. JazakAllah!" : "Parents and students who have been part of Abu Bakkar Academy. Make your promise below and join them."}
+            </p>
+          </div>
 
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3">
             <button onClick={support} className="btn w-full bg-[#0b5a3e] text-lg text-white shadow-lg hover:brightness-110">
-              <Heart size={20} className="mr-2" fill="currentColor" />{supported ? "Thank you for your promise" : "I Support This Promise"}
+              <Heart size={20} className="mr-2" fill="currentColor" />
+              <span className={`transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}>{supported ? "Thank you for your promise" : "I Support This Promise"}</span>
             </button>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={wa} className="btn bg-[#1f9a4d] !px-3 text-white shadow-lg hover:brightness-110"><Send size={18} className="mr-2 shrink-0" />Share on WhatsApp</button>

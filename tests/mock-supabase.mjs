@@ -48,6 +48,13 @@ export async function startMock({ port = 54321, seed = false } = {}) {
     const bodyText = Buffer.concat(chunks).toString(); const url = new URL(req.url, "http://x");
     const reply = (status, body, extra = {}) => { res.writeHead(status, { "Content-Type": "application/json", ...extra }); res.end(body === undefined ? "" : json(body)); };
     try {
+      if (url.pathname.startsWith("/storage/v1/")) {                                  // minimal storage stand-in (uploads, signed links, removal)
+        const sp = url.pathname.slice("/storage/v1/".length);
+        if (req.method === "POST" && sp.startsWith("object/sign/")) { const bucket = sp.slice("object/sign/".length); const b = JSON.parse(bodyText || "{}"); return reply(200, (b.paths || []).map((path) => ({ path, signedURL: `/object/sign/${bucket}/${path}?token=mock`, error: null }))); }
+        if (req.method === "DELETE" && sp.startsWith("object/")) return reply(200, []);
+        if ((req.method === "POST" || req.method === "PUT") && sp.startsWith("object/")) return reply(200, { Key: sp.slice("object/".length) });
+        return reply(404, { message: "storage: not mocked" });
+      }
       const m = url.pathname.match(/^\/rest\/v1\/(.+)$/); if (!m) return reply(404, { message: "not found" });
       const name = m[1].replace(/^rpc\//, ""); const isRpc = m[1].startsWith("rpc/");
       const single = (req.headers.accept || "").includes("vnd.pgrst.object");

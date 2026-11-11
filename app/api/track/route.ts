@@ -9,6 +9,7 @@ const schema = z.object({
   source: z.string().max(120).optional(),
   section: z.string().regex(/^[a-z0-9-]{1,40}$/).optional(),   // which homepage section was shared / brought the visit
   rf: z.string().regex(/^[a-z0-9]{1,12}$/i).optional(),        // the sharer's anonymous code (one per browser, no personal data)
+  visitor: z.string().regex(/^[a-z0-9]{6,32}$/i).optional(),   // private anonymous id of this browser, only for counting unique visitors
 });
 
 export async function POST(req: Request) {
@@ -16,8 +17,9 @@ export async function POST(req: Request) {
   const p = schema.safeParse(await req.json().catch(() => null));
   if (!p.success || !dbConfigured()) return NextResponse.json({ ok: false }, { status: 400 });
   const c = db();
-  const { error } = await c.from("events").insert(p.data);
-  // Before the latest database update the section/rf columns do not exist: still record the event itself.
-  if (error && (p.data.section || p.data.rf)) { const { section, rf, ...plain } = p.data; void section; void rf; await c.from("events").insert(plain); }
+  let { error } = await c.from("events").insert(p.data);
+  // Before the latest database update the newer columns do not exist: retry without them so the event itself is always recorded.
+  if (error && p.data.visitor) { const { visitor, ...noVisitor } = p.data; void visitor; ({ error } = await c.from("events").insert(noVisitor)); }
+  if (error && (p.data.section || p.data.rf)) { const { section, rf, visitor, ...plain } = p.data; void section; void rf; void visitor; await c.from("events").insert(plain); }
   return NextResponse.json({ ok: true });
 }

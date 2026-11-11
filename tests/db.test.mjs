@@ -332,3 +332,9 @@ test("SHARING: events keep the section and the sharer's anonymous code; copy / p
   await q("insert into events(session_id,name,source) values ('sh4','landing_view','direct')");                       // old-style rows still fine (section/rf optional)
   await fails(() => db.query("insert into events(session_id,name) values ('sh5','share_bogus')"), "events_name_check");   // unknown names are still refused
 });
+
+test("UNIQUE VISITORS: events can carry a private anonymous visitor id", async () => {
+  await q("insert into events(session_id,name,source,visitor) values ('uv-s1','landing_view','direct','vid0000000000001'), ('uv-s2','landing_view','direct','vid0000000000001'), ('uv-s3','landing_view','direct','vid0000000000002')");
+  const r = await q("select count(distinct visitor)::int as people, count(distinct session_id)::int as visits from events where visitor like 'vid00000000000%'");
+  assert.deepEqual(r[0], { people: 2, visits: 3 });          // 2 different browsers made 3 visits
+});

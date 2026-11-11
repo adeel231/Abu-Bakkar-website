@@ -50,9 +50,11 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col gap-2 border-t border-slate-200 py-6 text-xs text-slate-500 md:flex-row md:justify-between">
           <p>© {new Date().getFullYear()} Abu Bakkar Academy. All rights reserved.</p>
-          <p className="md:max-w-xl md:text-right">
-            Independent online academy — not affiliated with, endorsed by, or connected to any television channel, drama production or its cast.
-          </p>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-1">
+            {([["Privacy Policy", "/privacy"], ["Terms of Enrollment", "/terms"], ["Refund Policy", "/refund-policy"]] as [string, string][]).map(([label, href]) => (
+              <Link key={href} href={href} className="font-medium text-slate-600 underline-offset-2 hover:text-navy hover:underline">{label}</Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

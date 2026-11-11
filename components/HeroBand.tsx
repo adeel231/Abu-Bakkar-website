@@ -41,8 +41,7 @@ export default function HeroBand({ image, alt, imagePos = "bg-[position:60%_20%]
             ))}
           </div>
 
-          <p className="mt-8 font-sans text-3xl font-bold md:text-4xl lg:mt-[2.6vw] lg:text-[2.4vw]">Abu Bakkar Academy</p>
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-gold bg-gold/15 px-5 py-1.5 font-sans text-base font-bold text-gold md:text-lg lg:mt-[1.2vw] lg:px-[2vw] lg:py-[0.5vw] lg:text-[1.4vw]">
+          <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-gold bg-gold/15 px-5 py-1.5 font-sans text-base font-bold text-gold md:text-lg lg:mt-[2.6vw] lg:px-[2vw] lg:py-[0.5vw] lg:text-[1.4vw]">
             {pill}
           </p>
           <p className="mt-5 max-w-md text-base text-white/90 md:text-lg lg:mt-[1.4vw] lg:max-w-none lg:w-[92%] lg:text-[1.2vw] lg:leading-relaxed">{paragraph}</p>
