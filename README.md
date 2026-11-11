@@ -1,6 +1,6 @@
 # Abu Bakkar Academy — website and enrollment system.
 
-Next.js 14 · Tailwind · Supabase · Vercel
+Next.js 14 · Tailwind · Supabase · Vercel.
 
 ## What it does
 - Marketing homepage (Character Grooming = main service, Academic Tuition = second service), Parent Promise sharing.
