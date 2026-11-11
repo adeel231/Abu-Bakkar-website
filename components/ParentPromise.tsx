@@ -12,7 +12,7 @@ export default function ParentPromise({ text, count: initialCount = 0 }: { text:
 
   useEffect(() => {
     try { setSupported(localStorage.getItem("aba_promise") === "1"); } catch {}
-    setUrl(`${location.origin}/?rf=${myReferralCode()}&utm_source=share`);
+    setUrl(`${location.origin}/?rf=${myReferralCode()}&utm_source=share&utm_medium=section&utm_content=promise#promise`);
   }, []);
 
   // Message + link only. Never include any enrollment or child information.
@@ -28,11 +28,11 @@ export default function ParentPromise({ text, count: initialCount = 0 }: { text:
     adEvent("PromiseSupport");
   }
   function wa() {
-    track("share_whatsapp"); adEvent("Share", { method: "whatsapp" });
+    track("share_whatsapp", { section: "promise", rf: myReferralCode() }); adEvent("Share", { method: "whatsapp", section: "promise" });
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
   }
   function fb() {
-    track("share_facebook"); adEvent("Share", { method: "facebook" });
+    track("share_facebook", { section: "promise", rf: myReferralCode() }); adEvent("Share", { method: "facebook", section: "promise" });
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`, "_blank", "noopener");
   }
 

@@ -3,16 +3,18 @@ import { ArrowRight, BadgeCheck, CreditCard, Download, Heart, Megaphone, Percent
 import { db, dbConfigured, getSettings, type EnrollmentRow } from "@/lib/db";
 import { formatPKR } from "@/lib/pricing";
 import { resolveRange } from "@/lib/range";
+import { sectionName } from "@/lib/sections";
 import { Flash, Section, Stat } from "./ui";
 import RangeSelector from "./RangeSelector";
 
 export const dynamic = "force-dynamic";
 
 /** Supabase returns at most 1000 rows per request, so read in pages until everything is loaded. */
-async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown }>, cap = 100000): Promise<T[]> {
+async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: unknown; error?: unknown }>, cap = 100000, strict = false): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; from < cap; from += 1000) {
-    const { data } = await page(from, from + 999);
+    const { data, error } = await page(from, from + 999);
+    if (error && strict) throw error;
     const rows = (data ?? []) as T[];
     out.push(...rows);
     if (rows.length < 1000) break;
@@ -35,15 +37,23 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   const { start, end } = range;
   const inRange = <Q extends { gte: (c: string, v: string) => Q; lt: (c: string, v: string) => Q }>(q: Q, col: string) => (start && end ? q.gte(col, start).lt(col, end) : q);
 
-  const [created, paidThen, events, st, pay] = await Promise.all([
+  type Ev = { session_id: string; name: string; source: string | null; section?: string | null; rf?: string | null };
+  // The section / sharer-code columns exist only after the latest database update: fall back to the plain columns until then.
+  const loadEvents = async (): Promise<{ rows: Ev[]; detailed: boolean }> => {
+    try { return { rows: await fetchAll<Ev>((a, b) => inRange(c.from("events").select("session_id,name,source,section,rf"), "created_at").order("id").range(a, b), 100000, true), detailed: true }; }
+    catch { return { rows: await fetchAll<Ev>((a, b) => inRange(c.from("events").select("session_id,name,source"), "created_at").order("id").range(a, b)), detailed: false }; }
+  };
+
+  const [created, paidThen, evs, st, pay] = await Promise.all([
     // enrollments STARTED in the period (activity, sources, completion)
     fetchAll<Enr>((a, b) => inRange(c.from("enrollments").select(ENR_COLS), "created_at").order("created_at", { ascending: false }).order("id").range(a, b)),
     // payments VERIFIED in the period (money received)
     fetchAll<Enr>((a, b) => inRange(c.from("enrollments").select(ENR_COLS).eq("status", "verified"), "verified_at").order("id").range(a, b)),
-    fetchAll<{ session_id: string; name: string; source: string | null }>((a, b) => inRange(c.from("events").select("session_id,name,source"), "created_at").order("id").range(a, b)),
+    loadEvents(),
     getSettings(),
     c.from("payments").select("id").eq("status", "submitted"),
   ]);
+  const events = evs.rows;
   const rows = created;                                           // started in the period
   const verified = paidThen;                                      // paid (verified) in the period
   const revenue = verified.reduce((a, r) => a + r.amount_pkr, 0);
@@ -59,8 +69,37 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   for (const e of events) {
     (sessions[e.name] ??= new Set()).add(e.session_id);
     if (e.name === "landing_view") (traffic[e.source || "direct"] ??= new Set()).add(e.session_id);
-    if (["share_whatsapp", "share_facebook", "promise_support", "referral_visit"].includes(e.name)) shares[e.name] = (shares[e.name] || 0) + 1;
+    if (["share_whatsapp", "share_facebook", "share_copy", "share_native", "promise_support", "referral_visit"].includes(e.name)) shares[e.name] = (shares[e.name] || 0) + 1;
   }
+
+  // ---- Sharing insight: per section and per sharer (an anonymous code = one browser; no names are ever collected)
+  const SHARE_NAMES = ["share_whatsapp", "share_facebook", "share_copy", "share_native"];
+  type SecAgg = { shares: number; wa: number; fb: number; copy: number; phone: number; people: Set<string>; visits: Set<string>; enrolled: number };
+  type ShAgg = { shares: number; sections: Set<string>; visits: Set<string>; enrolled: number; paid: number };
+  const bySec = new Map<string, SecAgg>(), bySharer = new Map<string, ShAgg>();
+  const secOf = (k: string) => { if (!bySec.has(k)) bySec.set(k, { shares: 0, wa: 0, fb: 0, copy: 0, phone: 0, people: new Set(), visits: new Set(), enrolled: 0 }); return bySec.get(k)!; };
+  const shOf = (k: string) => { if (!bySharer.has(k)) bySharer.set(k, { shares: 0, sections: new Set(), visits: new Set(), enrolled: 0, paid: 0 }); return bySharer.get(k)!; };
+  const codeFromSource = (src: string | null | undefined) => (src && src.startsWith("referral / ") ? src.slice(11) : "");
+  for (const e of events) {
+    if (SHARE_NAMES.includes(e.name)) {
+      const o = secOf(e.section || "other"); o.shares++;
+      if (e.name === "share_whatsapp") o.wa++; else if (e.name === "share_facebook") o.fb++; else if (e.name === "share_copy") o.copy++; else o.phone++;
+      if (e.rf) { o.people.add(e.rf); const sh = shOf(e.rf); sh.shares++; sh.sections.add(e.section || "other"); }
+    } else if (e.name === "landing_view") {
+      const code = e.rf || codeFromSource(e.source);
+      if (e.section) secOf(e.section).visits.add(e.session_id);
+      if (code) shOf(code).visits.add(e.session_id);
+    }
+  }
+  for (const r of rows) {
+    const code = codeFromSource(r.source);
+    if (code) { const sh = shOf(code); sh.enrolled++; if (r.status === "verified") sh.paid++; }
+    const u = (r.utm ?? {}) as Record<string, string>;
+    if (u.source === "share" && u.content) secOf(u.content).enrolled++;
+  }
+  const sectionRows = Array.from(bySec.entries()).sort((a, b) => b[1].shares - a[1].shares || b[1].visits.size - a[1].visits.size);
+  const sharerRows = Array.from(bySharer.entries()).sort((a, b) => b[1].enrolled - a[1].enrolled || b[1].shares - a[1].shares || b[1].visits.size - a[1].visits.size).slice(0, 10);
+  const totalShares = sectionRows.reduce((a, [, o]) => a + o.shares, 0);
   const visitors = sessions.landing_view?.size ?? 0;
 
   // by source
@@ -85,6 +124,8 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
     [Heart, "Promise supports", shares.promise_support || 0],
     [Share2, "WhatsApp shares", shares.share_whatsapp || 0],
     [Share2, "Facebook shares", shares.share_facebook || 0],
+    [Share2, "Links copied", shares.share_copy || 0],
+    [Share2, "Phone share menu", shares.share_native || 0],
     [Users, "Referral visits", shares.referral_visit || 0],
   ];
 
@@ -158,6 +199,40 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
           </div>
         </Section>
       </div>
+
+      <Section title="Sharing by section" desc={`Which parts of the website get shared and what the shares bring back (${totalShares} share${totalShares === 1 ? "" : "s"} in this period)`}>
+        {!evs.detailed && (
+          <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            To see which section each share was from, run the latest database update (<code>supabase/schema.sql</code>) once. New shares are recorded with their section after that.
+          </p>
+        )}
+        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
+          <table className="w-full min-w-[40rem] text-sm">
+            <thead><tr className="text-left"><th className="p-3 pl-5">Section</th><th className="p-3 text-right">Shares</th><th className="p-3 text-right">WhatsApp</th><th className="p-3 text-right">Facebook</th><th className="p-3 text-right">Copy link</th><th className="p-3 text-right">Phone menu</th><th className="p-3 text-right">People</th><th className="p-3 text-right">Visits brought</th><th className="p-3 pr-5 text-right">Enrollments</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {sectionRows.map(([k, o]) => (
+                <tr key={k}><td className="p-3 pl-5 font-medium text-navy">{k === "other" ? "Not recorded" : sectionName(k)}</td><td className="p-3 text-right font-semibold tabular-nums text-navy">{o.shares}</td><td className="p-3 text-right tabular-nums">{o.wa}</td><td className="p-3 text-right tabular-nums">{o.fb}</td><td className="p-3 text-right tabular-nums">{o.copy}</td><td className="p-3 text-right tabular-nums">{o.phone}</td><td className="p-3 text-right tabular-nums">{o.people.size}</td><td className="p-3 text-right tabular-nums">{o.visits.size}</td><td className="p-3 pr-5 text-right tabular-nums">{o.enrolled}</td></tr>
+              ))}
+              {!sectionRows.length && <tr><td className="p-6 text-center text-slate-500" colSpan={9}>No shares in this period yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">“Shares” counts taps on a share option. “People” is the number of different browsers. On phones the share menu cannot tell us which app was chosen.</p>
+      </Section>
+
+      <Section title="Top sharers" desc="Each code is one browser. No names, phone numbers or child details are collected.">
+        <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">
+          <table className="w-full min-w-[34rem] text-sm">
+            <thead><tr className="text-left"><th className="p-3 pl-5">Sharer code</th><th className="p-3 text-right">Shares</th><th className="p-3">Sections shared</th><th className="p-3 text-right">Visits brought</th><th className="p-3 text-right">Enrollments</th><th className="p-3 pr-5 text-right">Paid</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {sharerRows.map(([code, o]) => (
+                <tr key={code}><td className="p-3 pl-5 font-mono text-navy">{code}</td><td className="p-3 text-right tabular-nums">{o.shares}</td><td className="p-3 text-slate-600">{Array.from(o.sections).map((x) => (x === "other" ? "Not recorded" : sectionName(x))).join(", ") || "—"}</td><td className="p-3 text-right tabular-nums">{o.visits.size}</td><td className="p-3 text-right tabular-nums">{o.enrolled}</td><td className="p-3 pr-5 text-right font-semibold tabular-nums text-navy">{o.paid}</td></tr>
+              ))}
+              {!sharerRows.length && <tr><td className="p-6 text-center text-slate-500" colSpan={6}>No shared links have been used yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Section>
 
       <Section title="Advertising sources and referrals" desc="Where visitors and paying students came from">
         <div className="overflow-x-auto rounded-2xl bg-white shadow-sm">

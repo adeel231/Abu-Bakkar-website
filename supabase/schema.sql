@@ -71,7 +71,11 @@ create table if not exists settings (
 alter table events drop constraint if exists events_name_check;
 alter table events add constraint events_name_check check (name in (
   'ad_click','landing_view','enroll_click','form_view','form_start','payment_started','payment_verified',
-  'share_whatsapp','share_facebook','promise_support','referral_visit'));
+  'share_whatsapp','share_facebook','share_copy','share_native','promise_support','referral_visit'));
+-- Sharing insight: which homepage section was shared (or brought the visit) and the sharer's anonymous code (one per browser).
+alter table events add column if not exists section text;
+alter table events add column if not exists rf text;
+create index if not exists events_section_idx on events(section) where section is not null;
 
 -- =====================================================================================
 -- 2. NEW TABLES

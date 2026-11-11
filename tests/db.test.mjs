@@ -320,3 +320,15 @@ test("TUITION: parent chooses All subjects or Compulsory subjects at one price; 
   await fails(() => enroll({ package_id: t.id, school_grade: "Grade 6", subject_id: null, subject_choice: "everything", whatsapp: "923002220034" }), "SUBJECT_REQUIRED");
   await fails(() => enroll({ package_id: t.id, school_grade: "", subject_id: null, subject_choice: "all", whatsapp: "923002220035" }), "GRADE_REQUIRED");
 });
+
+test("SHARING: events keep the section and the sharer's anonymous code; copy / phone share events are allowed", async () => {
+  await q("insert into events(session_id,name,source,section,rf) values ('sh1','share_copy','direct','faq','abc123'), ('sh2','share_native','direct','hero','abc123'), ('sh3','landing_view','referral / abc123','faq','abc123')");
+  const rows = await q("select name, section, rf from events where rf = 'abc123' order by name");
+  assert.deepEqual(rows, [
+    { name: "landing_view", section: "faq", rf: "abc123" },
+    { name: "share_copy", section: "faq", rf: "abc123" },
+    { name: "share_native", section: "hero", rf: "abc123" },
+  ]);
+  await q("insert into events(session_id,name,source) values ('sh4','landing_view','direct')");                       // old-style rows still fine (section/rf optional)
+  await fails(() => db.query("insert into events(session_id,name) values ('sh5','share_bogus')"), "events_name_check");   // unknown names are still refused
+});

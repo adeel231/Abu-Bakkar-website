@@ -40,19 +40,19 @@ export default function ShareButton({ id, title, text, tone = "light", corner }:
     if (touch && typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title, text, url: link() });
-        adEvent("Share", { method: "native", section: id });
+        track("share_native", { section: id, rf: myReferralCode() }); adEvent("Share", { method: "native", section: id });
       } catch { /* the person closed the share sheet */ }
       return;
     }
     setOpen((o) => !o);
   }
   function whatsapp() {
-    track("share_whatsapp"); adEvent("Share", { method: "whatsapp", section: id });
+    track("share_whatsapp", { section: id, rf: myReferralCode() }); adEvent("Share", { method: "whatsapp", section: id });
     window.open(`https://wa.me/?text=${encodeURIComponent(`${title}\n${text}\n\n${link()}`)}`, "_blank", "noopener");
     setOpen(false);
   }
   function facebook() {
-    track("share_facebook"); adEvent("Share", { method: "facebook", section: id });
+    track("share_facebook", { section: id, rf: myReferralCode() }); adEvent("Share", { method: "facebook", section: id });
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link())}&quote=${encodeURIComponent(text)}`, "_blank", "noopener");
     setOpen(false);
   }
@@ -60,7 +60,7 @@ export default function ShareButton({ id, title, text, tone = "light", corner }:
     const url = link();
     try { await navigator.clipboard.writeText(url); }
     catch { const t = document.createElement("textarea"); t.value = url; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch {} t.remove(); }
-    adEvent("Share", { method: "copy", section: id });
+    track("share_copy", { section: id, rf: myReferralCode() }); adEvent("Share", { method: "copy", section: id });
     setCopied(true); setTimeout(() => { setCopied(false); setOpen(false); }, 1400);
   }
 

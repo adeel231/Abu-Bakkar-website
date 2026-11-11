@@ -5,7 +5,7 @@ import { adEvent } from "./Analytics";
 
 export type FunnelEvent =
   | "ad_click" | "landing_view" | "enroll_click" | "form_view" | "form_start" | "payment_started" | "payment_verified"
-  | "share_whatsapp" | "share_facebook" | "promise_support" | "referral_visit";
+  | "share_whatsapp" | "share_facebook" | "share_copy" | "share_native" | "promise_support" | "referral_visit";
 
 export function sessionId() {
   try {
@@ -63,11 +63,17 @@ export function currentSource() {
 }
 
 /** First-party anonymous funnel counter: random session id + source only, no personal data. */
-export function track(name: FunnelEvent) {
+export function track(name: FunnelEvent, extra?: { section?: string; rf?: string }) {
   try {
+    let { section, rf } = extra ?? {};
+    // A visit that arrives through a shared link remembers WHICH section was shared and by which anonymous code.
+    if (!extra && (name === "landing_view" || name === "referral_visit")) {
+      const c = captureCampaign();
+      if (c.source === "share") { section = c.content; rf = c.rf; }
+    }
     fetch("/api/track", {
       method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
-      body: JSON.stringify({ session_id: sessionId(), name, source: currentSource() }),
+      body: JSON.stringify({ session_id: sessionId(), name, source: currentSource(), ...(section ? { section } : {}), ...(rf ? { rf } : {}) }),
     }).catch(() => {});   // tracking must never break the page (e.g. an ad-blocker blocks it)
   } catch {}
 }
