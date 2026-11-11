@@ -85,3 +85,6 @@ body { @apply bg-white text-slate-800 antialiased; font-family: system-ui, -appl
 .admin-main .input { border-radius: 0.65rem; font-size: 0.925rem; }
 .admin-main .label { font-size: 0.8rem; color: rgb(71 85 105); }
 .admin-main .btn-gold { box-shadow: none; }
+
+/* Jumping to a section (menu links and shared links) lands just below the sticky strip + menu instead of underneath them. */
+main section[id] { scroll-margin-top: 7rem; }

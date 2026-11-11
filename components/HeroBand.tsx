@@ -9,11 +9,13 @@ type Props = {
   id?: string;
   /** The designed hero: a photo-only image cut from the 2001×786 banner (its right 61.5%); the section keeps the banner's proportions. */
   concept?: boolean;
+  /** Optional element pinned inside the section (the Share button). */
+  share?: ReactNode;
 };
 
 /** Full-width hero band: dark green, text on the left, photo on the right fading into the green.
  *  On large screens it keeps the proportions of the design image and scales with the screen width. */
-export default function HeroBand({ image, alt, imagePos = "bg-[position:60%_20%]", hook, sub, as: H = "h2", pill, paragraph, badge, primary, secondary, id, concept }: Props) {
+export default function HeroBand({ image, alt, imagePos = "bg-[position:60%_20%]", hook, sub, as: H = "h2", pill, paragraph, badge, primary, secondary, id, concept, share }: Props) {
   const words = hook.split(" ");
   return (
     <section id={id} className={"relative isolate overflow-hidden bg-[#052a1f] text-white lg:aspect-[1571/768]" + (concept ? " lg:!aspect-[2001/786]" : "")}>
@@ -50,6 +52,7 @@ export default function HeroBand({ image, alt, imagePos = "bg-[position:60%_20%]
           </div>
         </div>
       </div>
+      {share}
     </section>
   );
 }

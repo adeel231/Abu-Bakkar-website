@@ -93,7 +93,7 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
                       <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="followed_up" defaultChecked={r.followed_up} /> WhatsApp follow-up done</label>
                       <button className="btn border border-slate-300 !py-2 text-navy">Save notes</button>
                     </form>
-                    {r.status !== "verified" && r.status !== "refunded" && <DeleteEnrollment id={r.id} label={r.ref} returnTo={ret} />}
+                    {r.status !== "verified" && <DeleteEnrollment id={r.id} label={r.ref} returnTo={ret} refunded={r.status === "refunded"} />}
                     {r.status === "verified" && (
                       <form action={refundEnrollment} className="flex flex-wrap items-end gap-2 border-t border-slate-100 pt-3">
                         <input type="hidden" name="id" value={r.id} /><input type="hidden" name="return" value={ret} />

@@ -414,15 +414,16 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
--- Delete an enrollment that never became a paid student (test / abandoned / rejected). Paid records are protected.
--- Also removes its payment rows, and the student / parent record if nothing else uses them. Returns the receipt files to delete.
+-- Delete an enrollment that is not an ACTIVE paid student (test / abandoned / rejected / refunded). A verified (paying) enrollment is
+-- protected: refund it first. Also removes its payment rows, and the student / parent record if nothing else uses them.
+-- Returns the receipt files to delete.
 create or replace function delete_enrollment(p_enrollment uuid) returns jsonb language plpgsql as $$
 declare e enrollments%rowtype; v_paths text[];
 begin
   select * into e from enrollments where id = p_enrollment for update;
   if not found then raise exception 'ENROLLMENT_NOT_FOUND'; end if;
-  if e.status in ('verified','refunded')
-     or exists (select 1 from payments p where p.enrollment_id = e.id and p.status in ('verified','refunded')) then
+  if e.status = 'verified'
+     or exists (select 1 from payments p where p.enrollment_id = e.id and p.status = 'verified') then
     raise exception 'ENROLLMENT_PROTECTED';
   end if;
   select coalesce(array_agg(receipt_path) filter (where receipt_path is not null), '{}') into v_paths from payments where enrollment_id = e.id;

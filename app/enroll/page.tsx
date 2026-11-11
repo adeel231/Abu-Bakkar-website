@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Logo } from "@/components/Brand";
 import Tracker from "@/components/Tracker";
 import { AnnouncementBar } from "@/components/Chrome";
 import EnrollWizard from "./EnrollWizard";
@@ -22,8 +21,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
       {/* Same top strip as the home page: phone number always visible */}
       <div className="sticky top-0 z-50"><AnnouncementBar /></div>
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-8">
-        <Logo />
-        <h1 className="mt-5 font-serif text-3xl font-bold text-navy">Enroll Your Child</h1>
+        <h1 className="font-serif text-3xl font-bold text-navy">Enroll Your Child</h1>
         <p className="mt-1 text-slate-600">Takes about 2 minutes.</p>
 
         {/* Display prices from the built-in fallback are never used for checkout. */}

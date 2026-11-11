@@ -23,7 +23,7 @@ const MESSAGES: Record<string, string> = {
   SHORT_PAYMENT: "The amount received is less than the amount payable, so it cannot be approved.",
   PAYMENT_NOT_VERIFIED: "A student cannot be enrolled without a verified payment.",
   FEE_LOCKED: "The fee charged at checkout cannot be changed.",
-  ENROLLMENT_PROTECTED: "Paid enrollments cannot be deleted because they are money records. Use Mark refunded instead.",
+  ENROLLMENT_PROTECTED: "A paid student cannot be deleted. Use Mark refunded first, then you can delete it.",
   NOT_ENROLLED: "Only students with a verified payment can be placed in a class or refunded.",
   BATCH_FULL: "That class batch is full.",
   BATCH_NOT_FOUND: "That class batch was not found or is inactive.",

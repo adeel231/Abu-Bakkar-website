@@ -1,5 +1,6 @@
 import { Check, GraduationCap, ShieldCheck, User, Users } from "lucide-react";
 import { EnrollLink } from "./Tracker";
+import ShareButton from "./ShareButton";
 import {
   CLASS_TYPE_BLURB, CLASS_TYPE_LABEL, formatPKR, isLimited, monthlyPackage, plan, seatsFor, type ClassType,
 } from "@/lib/pricing";
@@ -37,7 +38,9 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
   const prog = c.programs.find((p) => p.kind === "character");
   if (!prog) return null;
   return (
-    <section id="packages" className="bg-white text-navy">
+    <section id="packages" className="relative bg-white text-navy">
+      <ShareButton id="packages" corner="top-right" title="Character Grooming packages"
+        text={`Online Group classes from ${formatPKR(monthlyPackage(c.packages, prog.id, "group")?.price_pkr ?? 6000).replace(/,/g, "")} per month.`} />
       <div className="section">
         <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-gold">Character Grooming</p>
         <h2 className="h2 mt-2 text-center">Choose Your Package</h2>
@@ -97,7 +100,8 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
 /** The three age groups, shown before enrollment. */
 export function AgeGroups({ c }: { c: Catalog }) {
   return (
-    <section id="age-groups" className="bg-slate-50 text-navy">
+    <section id="age-groups" className="relative bg-slate-50 text-navy">
+      <ShareButton id="age-groups" corner="top-right" title="Age groups at Abu Bakkar Academy" text="Group A for ages 5 to 8. Group B for ages 8 to 12. Group C for ages 12 to 15. Find the right group for your child." />
       <div className="section">
         <h2 className="h2 text-center">Age Groups</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-3">

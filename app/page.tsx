@@ -3,6 +3,7 @@ import Tracker, { EnrollLink } from "@/components/Tracker";
 import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, CalendarCheck, MessagesSquare, GraduationCap, TrendingUp, Sprout, Video, ClipboardList, type LucideIcon } from "lucide-react";
 import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
+import ShareButton from "@/components/ShareButton";
 import { AgeGroups, CharacterPackages } from "@/components/Packages";
 import { AnnouncementBar, FloatingBar, Header } from "@/components/Chrome";
 import { anyLimited, getCatalog, getPromiseCount, getSettings } from "@/lib/db";
@@ -57,7 +58,8 @@ export default async function Home() {
 
       {/* 1. HERO — the designed banner (boy imagining the young man he admires) */}
       <HeroBand
-        as="h1" concept image="/hero-boy-full.jpg"
+        as="h1" concept id="hero" image="/hero-boy-full.jpg"
+        share={<ShareButton id="hero" tone="dark" corner="bottom-right" title="Abu Bakkar Academy" text="Sirf Taleem Nahi Tarbiyat Bhi. Live online Character Grooming for boys and girls aged 5 to 15." />}
         alt="A boy at his desk imagines himself as the young man he admires, reading a book"
         hook={hook} sub={sub} badge={limited ? "Limited Seats Available" : undefined}
         pill={<><Sprout size={16} /> Sirf Taleem Nahi, Tarbiyat Bhi <Sprout size={16} className="-scale-x-100" /></>}
@@ -66,7 +68,8 @@ export default async function Home() {
       />
 
       {/* 2. CHARACTER DEVELOPMENT (qualities) */}
-      <section id="qualities" className="bg-white text-[#0a3d2c]">
+      <section id="qualities" className="relative bg-white text-[#0a3d2c]">
+        <ShareButton id="qualities" corner="top-right" title="Character Development at Abu Bakkar Academy" text="Respect and honesty and patience and kindness. See the qualities every parent wants to see in their child." />
         <div className="section text-center">
           <h2 className="h2">Character Development</h2>
           <div className="mt-10 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
@@ -86,6 +89,7 @@ export default async function Home() {
         <div role="img" aria-label="A smiling girl waving during a live online class"
           className="prog-photo h-72 w-full bg-cover bg-[position:50%_14%] sm:h-96 lg:absolute lg:inset-y-0 lg:left-0 lg:-z-10 lg:h-auto lg:w-[42.8%] lg:bg-[position:left_center]"
           style={{ backgroundImage: "url(/program-photo.png)" }} />
+        <ShareButton id="programs" tone="dark" corner="top-right" title="Character Grooming Program" text="Live online Character Grooming for boys and girls aged 5 to 15 at Abu Bakkar Academy." />
 
         <div className="mx-auto flex max-w-6xl flex-col justify-center px-5 py-16 md:py-20 lg:mx-0 lg:h-full lg:max-w-none lg:py-0 lg:pl-[43.6vw] lg:pr-[3vw]">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-gold lg:text-[0.9vw]">Our Main Program</p>
@@ -118,7 +122,8 @@ export default async function Home() {
       <AgeGroups c={c} />
 
       {/* TEACHERS */}
-      <section className="relative isolate overflow-hidden bg-white text-navy">
+      <section id="teachers" className="relative isolate overflow-hidden bg-white text-navy">
+        <ShareButton id="teachers" corner="top-right" title="Qualified Verified Teachers" text="Classes at Abu Bakkar Academy are taught by qualified teachers for each age group." />
         {/* Same layout as the program banner, mirrored: the photo sits on the RIGHT and fades into the white on its inner edge. */}
         <div aria-hidden className="prog-photo prog-photo-right h-72 w-full bg-cover bg-no-repeat bg-[position:62%_22%] sm:h-96 lg:absolute lg:inset-y-0 lg:right-0 lg:-z-10 lg:h-auto lg:w-[46%] lg:bg-[position:62%_20%]"
           style={{ backgroundImage: "url(/hero-man.webp)" }} />
@@ -139,7 +144,8 @@ export default async function Home() {
       </section>
 
       {/* QUOTE BAND */}
-      <section className="bg-[#052a1f] text-center text-white">
+      <section id="hadith" className="relative bg-[#052a1f] text-center text-white">
+        <ShareButton id="hadith" tone="dark" corner="top-right" title="Hadith" text="“Tum mein sab se behtar woh hai jis ke akhlaaq sab se achhe hon.” (Sahih al-Bukhari)" />
         <div className="mx-auto max-w-3xl px-5 py-16 md:py-20">
           <p className="font-serif text-2xl font-bold leading-snug md:text-3xl">“Tum mein sab se behtar woh hai jis ke akhlaaq sab se achhe hon.”</p>
           <p className="mt-3 font-semibold text-gold">— Hadith, Sahih al-Bukhari</p>
@@ -151,7 +157,8 @@ export default async function Home() {
       <ParentPromise text={promise} count={promiseCount} />
 
       {/* HOW IT WORKS */}
-      <section id="journey" className="bg-slate-50 text-navy">
+      <section id="journey" className="relative bg-slate-50 text-navy">
+        <ShareButton id="journey" corner="top-right" title="How to enroll at Abu Bakkar Academy" text="Enrolling your child takes six simple steps. See how it works." />
         <div className="section">
           <h2 className="h2 text-center">Your Journey With Us</h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -166,7 +173,9 @@ export default async function Home() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="bg-slate-50 text-navy"><div className="section !pt-0">
+      <section id="faq" className="relative bg-slate-50 text-navy">
+        <ShareButton id="faq" corner="top-right" title="Parent FAQs" text="Answers to common parent questions about Abu Bakkar Academy." />
+        <div className="section !pt-0">
         <h2 className="h2 text-center">Parent FAQs</h2>
         <div className="mx-auto mt-8 max-w-3xl divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
           {faq.map(([q, a]) => (
@@ -179,17 +188,12 @@ export default async function Home() {
       </div></section>
 
       {/* FINAL CTA */}
-      <section className="relative overflow-hidden border-t border-gold/40 bg-gradient-to-br from-[#0a4a36] to-[#052a1f] text-white">
-        <div className="mx-auto grid max-w-5xl items-end px-5 pt-14 md:grid-cols-[1.3fr_0.7fr] md:pt-0">
-          <div className="pb-10 text-center md:py-24 md:text-left">
-            <h2 className="font-serif text-3xl font-bold md:text-5xl">Your Child’s Best Chapter Can Begin Today</h2>
-            <p className="mt-3 text-white/85">Sirf Taleem Nahi, Tarbiyat Bhi.</p>
-            <EnrollLink href={enrollHref} className="btn-gold mt-8 !px-10 !py-4 text-lg">ENROLL NOW</EnrollLink>
-          </div>
-          {/* Photo stands on the bottom edge of the band (no glow or shadow). */}
-          <div className="relative mx-auto flex h-72 w-full max-w-[17rem] items-end justify-center md:h-[27rem] md:max-w-none">
-            <img src="/sh.webp" alt="" loading="lazy" decoding="async" className="relative h-full w-auto max-w-full object-contain object-bottom" />
-          </div>
+      <section id="join" className="relative overflow-hidden border-t border-gold/40 bg-gradient-to-br from-[#0a4a36] to-[#052a1f] text-center text-white">
+        <ShareButton id="join" tone="dark" corner="top-right" title="Abu Bakkar Academy" text="Your child's best chapter can begin today. Sirf Taleem Nahi Tarbiyat Bhi." />
+        <div className="mx-auto max-w-3xl px-5 py-16 md:py-20">
+          <h2 className="font-serif text-3xl font-bold md:text-5xl">Your Child’s Best Chapter Can Begin Today</h2>
+          <p className="mt-3 text-white/85">Sirf Taleem Nahi, Tarbiyat Bhi.</p>
+          <EnrollLink href={enrollHref} className="btn-gold mt-8 !px-10 !py-4 text-lg">ENROLL NOW</EnrollLink>
         </div>
       </section>
 

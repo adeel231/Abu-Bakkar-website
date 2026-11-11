@@ -291,15 +291,18 @@ test("DELETE: unpaid enrollments can be deleted (with their payment and orphaned
   assert.equal((await q("select count(*)::int n from parents where id=$1", [par]))[0].n, 1);
   assert.equal((await q("select count(*)::int n from enrollments where ref=$1", [s2.ref]))[0].n, 1);
 
-  // paid (verified) enrollment is protected, and so is a refunded one
+  // an active paid (verified) enrollment is protected; once refunded it can be deleted (money already returned)
   const p = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220023", student_first_name: "Paid1" });
   await q("select submit_payment($1,'JazzCash','PAID-DEL-0001',null,null)", [p.ref]);
   const pay = (await q("select id from payments where txn_ref='PAID-DEL-0001'"))[0];
   await q("select verify_payment($1,'admin@test',6000)", [pay.id]);
   await fails(() => db.query("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]), "ENROLLMENT_PROTECTED");
+  assert.equal((await q("select count(*)::int n from payments where id=$1", [pay.id]))[0].n, 1);      // still on record while verified
   await q("select refund_enrollment((select id from enrollments where ref=$1),'admin@test','test')", [p.ref]);
-  await fails(() => db.query("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]), "ENROLLMENT_PROTECTED");
-  assert.equal((await q("select count(*)::int n from payments where id=$1", [pay.id]))[0].n, 1);
+  assert.equal((await q("select status from enrollments where ref=$1", [p.ref]))[0].status, "refunded");
+  await q("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]);
+  assert.equal((await q("select count(*)::int n from enrollments where ref=$1", [p.ref]))[0].n, 0);
+  assert.equal((await q("select count(*)::int n from payments where id=$1", [pay.id]))[0].n, 0);
   await fails(() => db.query("select delete_enrollment('00000000-0000-0000-0000-000000000000')"), "ENROLLMENT_NOT_FOUND");
 });
 
