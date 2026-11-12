@@ -23,7 +23,7 @@ async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ dat
 }
 
 const FUNNEL: [string, string][] = [
-  ["ad_click", "Ad click"], ["landing_view", "Website visits"], ["enroll_click", "Enroll button clicks"], ["form_view", "Enrollment page"],
+  ["landing_view", "Website visits"], ["enroll_click", "Enroll button clicks"], ["form_view", "Enrollment page"],
   ["form_start", "Form started"], ["payment_started", "Checkout started"],
 ];
 
