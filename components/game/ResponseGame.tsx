@@ -17,8 +17,8 @@ type Phase = "intro" | "ask" | "result";
 
 const TIER_LABEL: Record<Tier, [string, string]> = {
   best: ["ABU BAKKAR WAY!", "Yeh hai asal respond."],
-  okay: ["THEEK HAI", "Behtar ho sakta tha."],
-  react: ["REACT HO GAYE!", "Yahan dil ne dimagh se pehle jawab diya."],
+  okay: ["THEEK HAI", "Baat tal gayi magar masla hal nahi hua."],
+  react: ["JALDI MEIN REACT KIYA", "Aisa sab ke saath hota hai. Ek behtar tareeqa bhi hai."],
 };
 const LETTERS = ["A", "B", "C"];
 
@@ -229,7 +229,7 @@ export default function ResponseGame({ price, schedule }: { price: string; sched
             </div>
 
             <div className="rg-view">
-              <Scene scene={lv.scene} you={choice?.you ?? "neutral"} other={choice?.other ?? (lv.id === 1 ? "smug" : lv.id === 2 ? "neutral" : lv.id === 3 ? "neutral" : lv.id === 4 ? "sad" : "sad")} tier={tier} />
+              <Scene scene={lv.scene} you={choice?.you ?? "neutral"} other={choice?.other ?? lv.otherStart} other2={choice?.other2 ?? lv.other2Start} tier={tier} />
               {tier === "best" && <div className="rg-burst" aria-hidden>{burst.map((b, i) => <i key={i} style={{ ["--dx" as string]: `${b.dx}px`, ["--dy" as string]: `${b.dy}px`, animationDelay: `${b.delay}ms` }} />)}</div>}
               {gain && <div key={gain.k} className={`rg-gain ${gain.n === 0 ? "zero" : ""}`} aria-hidden>{gain.n > 0 ? `+${gain.n}` : "+0"}</div>}
               {tier === "best" && combo >= 2 && <div className="rg-combo" aria-hidden>COMBO x{combo}</div>}
@@ -266,8 +266,8 @@ export default function ResponseGame({ price, schedule }: { price: string; sched
                 <div className={`rg-out t-${choice.tier}`} role="status" aria-live="polite">
                   <div className="rg-verdict"><strong>{TIER_LABEL[choice.tier][0]}</strong><span>{choice.title}</span></div>
                   <p className="rg-outcome">{choice.outcome}</p>
-                  {choice.tier !== "best" && <p className="rg-better"><b>Behtar jawab:</b> {lv.responses.find((r) => r.tier === "best")!.title}</p>}
-                  <div className="rg-lesson"><b>Abu Bakkar ki chaal</b><p>{lv.lesson}</p><p className="rg-say">Yeh bol kar dekhein: “{lv.say}”</p></div>
+                  {choice.tier !== "best" && <p className="rg-better"><b>Behtar tareeqa:</b> {lv.responses.find((r) => r.tier === "best")!.title}</p>}
+                  <div className="rg-lesson"><b>Abu Bakkar ka tareeqa</b><p>{lv.lesson}</p><p className="rg-say">Aisa keh kar dekhein: “{lv.say}”</p></div>
                   <button ref={nextRef} type="button" className="rg-btn rg-next" onClick={next}>{idx + 1 >= LEVELS.length ? "MERA RESULT" : "AGLA LEVEL"} <span aria-hidden>▶</span></button>
                 </div>
               )}
@@ -294,15 +294,15 @@ export default function ResponseGame({ price, schedule }: { price: string; sched
                 <p className="rg-note" role="status">{note}</p>
               </div>
               <div className="rg-home">
-                <b>Aaj raat ghar par poochhein</b>
+                <b>Aaj ghar par yeh baat karein</b>
                 <p>{weakest.dinner}</p>
               </div>
               <button type="button" className="rg-again" onClick={start}>↻ Play Again</button>
             </div>
             {/* Always visible: the enroll button never scrolls out of sight */}
             <div className="rg-res-foot">
-              <p><b>Yeh sab seekhna ab bachon ki aadat ban sakta hai.</b><br />Live Character Grooming · Ages 5 to 15 · From {price}/month</p>
-              <Link href="/enroll" onClick={enrollClick} className="rg-btn rg-green">APNE BACHAY KA SAFAR SHURU KAREIN →</Link>
+              <p><b>Mere bachay ko bhi yeh seekhna chahiye!</b><br />Live Character Grooming · Ages 5 to 15 · From {price}/month</p>
+              <Link href="/enroll" onClick={enrollClick} className="rg-btn rg-green">BACHAY KO ENROLL KAREIN →</Link>
             </div>
           </div>
         )}
