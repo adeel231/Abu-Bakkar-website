@@ -30,6 +30,10 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
   const pays = ids.length ? ((await c.from("payments").select("*").in("enrollment_id", ids)).data ?? []) as PaymentRow[] : [];
   const lastPay = new Map<string, PaymentRow>();
   for (const p of pays.sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))) lastPay.set(p.enrollment_id, p);
+  // Receipts are private: show them through links that expire after an hour (also after the payment was approved).
+  const receiptPaths = Array.from(lastPay.values()).map((x) => x.receipt_path).filter((x): x is string => !!x);
+  const signedReceipts = receiptPaths.length ? ((await c.storage.from("receipts").createSignedUrls(receiptPaths, 3600)).data ?? []) : [];
+  const receiptUrl = new Map(signedReceipts.filter((x) => x.signedUrl && x.path).map((x) => [x.path as string, x.signedUrl]));
   const ret = `/admin/enrollments?status=${status}${term ? `&q=${encodeURIComponent(term)}` : ""}`;
 
   return (
@@ -66,6 +70,18 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
                     <p>Source: {r.source || "—"}{r.utm?.campaign ? ` · campaign: ${r.utm.campaign}` : ""}</p>
                     <p>Created {when(r.created_at)}{r.verified_at ? ` · verified ${when(r.verified_at)}` : ""}</p>
                     {p && <p>Payment: {p.method} · <b>{p.txn_ref || "receipt uploaded"}</b> · {p.status}{p.amount_received ? ` · received ${formatPKR(p.amount_received)}` : ""}</p>}
+                    {p?.receipt_path && (() => {
+                      const url = receiptUrl.get(p.receipt_path);
+                      const pdf = p.receipt_path.endsWith(".pdf");
+                      return url ? (
+                        <a href={url} target="_blank" rel="noopener" className="group mt-2 block w-40" title="Open receipt in a new tab">
+                          {pdf
+                            ? <span className="flex h-28 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-navy group-hover:bg-slate-100">📄 Open PDF receipt</span>
+                            : <img src={url} alt={`Receipt for ${r.ref}`} className="h-28 w-full rounded-xl border border-slate-200 object-cover transition group-hover:opacity-90" />}
+                          <span className="mt-1 block text-center text-xs font-semibold text-emerald-700 underline">View full receipt</span>
+                        </a>
+                      ) : <p className="mt-2 text-sm text-red-700">Receipt could not be loaded.</p>;
+                    })()}
                     <div className="flex flex-wrap gap-2 pt-2">
                       <a className="btn-emerald !py-2" target="_blank" href={waLink(r.whatsapp, msg)}>WhatsApp parent</a>
                       {r.status === "payment_submitted" && <Link className="btn-gold !py-2" href="/admin/payments">Go to verify</Link>}
