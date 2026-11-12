@@ -143,7 +143,7 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
   const fromGame = (r: Enr) => { const u = (r.utm ?? {}) as Record<string, string>; return u.campaign === "response_challenge" || (u.source === "share" && u.content === "play"); };
   const gamePlays = sessions.game_start?.size ?? 0, gameDone = sessions.game_complete?.size ?? 0;
   const gameShares = bySec.get("play")?.shares ?? 0;
-  const gameEnrolled = rows.filter(fromGame).length, gamePaid = verified.filter(fromGame);
+  const gameEnrolled = rows.filter(fromGame).length;
   const challenge: [typeof Heart, string, string][] = [
     [Users, "Game started", gamePlays.toLocaleString("en-US")],
     [BadgeCheck, "Game completed", gameDone.toLocaleString("en-US")],
@@ -151,7 +151,6 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
     [Share2, "Game shares", gameShares.toLocaleString("en-US")],
     [Eye, "Visits from shares", (bySec.get("play")?.visits.size ?? 0).toLocaleString("en-US")],
     [Users, "Enrollments from game", gameEnrolled.toLocaleString("en-US")],
-    [Wallet, "Paid from game", `${gamePaid.length} · ${formatPKR(gamePaid.reduce((a, r) => a + r.amount_pkr, 0))}`],
   ];
 
   return (
@@ -237,7 +236,6 @@ export default async function Overview({ searchParams }: { searchParams: { msg?:
             </div>
           ))}
         </div>
-        <p className="mt-2 text-xs text-slate-500">Social links should use <code>?utm_source=instagram&amp;utm_medium=story&amp;utm_campaign=response_challenge#play</code> so paid enrollments can be matched to the game.</p>
       </Section>
 
       <Section title="Sharing by section">

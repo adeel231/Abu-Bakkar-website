@@ -1,10 +1,59 @@
 // Best-effort notifications. If credentials are absent nothing is sent, and the admin uses the
 // WhatsApp click-to-chat button in the dashboard instead. Failures never block a payment approval.
+import nodemailer from "nodemailer";
 import { formatPKR } from "./pricing";
 import { META_PIXEL_ID } from "./contact";
 
 const resendUrl = () => `${process.env.RESEND_API_URL || "https://api.resend.com"}/emails`;
 const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] as string));
+
+/** True when some way of sending email is set up (Gmail SMTP or Resend). */
+export const emailConfigured = () => !!((process.env.BREVO_API_KEY && process.env.BREVO_SENDER_EMAIL) || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) || (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) || (process.env.RESEND_API_KEY && process.env.RESEND_FROM));
+
+/** Sends one email. Uses Brevo (HTTPS API, same as Abundant Visas) when BREVO_API_KEY and BREVO_SENDER_EMAIL are set, else your own mailbox over SMTP (SMTP_HOST / SMTP_USER / SMTP_PASS, for example GoDaddy) else Gmail SMTP when GMAIL_USER and GMAIL_APP_PASSWORD are set (simple: a Gmail "App Password"), otherwise Resend. Never throws. */
+export async function sendMail(o: { to: string | string[]; subject: string; text: string; html?: string }): Promise<boolean> {
+  try {
+    if (process.env.BREVO_API_KEY && process.env.BREVO_SENDER_EMAIL) {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "api-key": process.env.BREVO_API_KEY, accept: "application/json", "content-type": "application/json" },
+        body: JSON.stringify({
+          sender: { name: process.env.BREVO_SENDER_NAME || "Abu Bakkar Academy", email: process.env.BREVO_SENDER_EMAIL },
+          to: (Array.isArray(o.to) ? o.to : [o.to]).map((email) => ({ email })),
+          replyTo: process.env.BREVO_REPLY_TO ? { email: process.env.BREVO_REPLY_TO } : undefined,
+          subject: o.subject, textContent: o.text, htmlContent: o.html,
+        }),
+        signal: AbortSignal.timeout(15_000),
+      }).catch(() => null);
+      if (!res?.ok) console.error("[mail] Brevo did not accept the email:", res?.status ?? "no response");
+      return !!res?.ok;
+    }
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const port = Number(process.env.SMTP_PORT) || 465;
+      const t = nodemailer.createTransport({
+        host: process.env.SMTP_HOST, port, secure: port === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000,
+      });
+      await t.sendMail({ from: `"${process.env.SMTP_FROM_NAME || "Abu Bakkar Academy"}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`, to: o.to, subject: o.subject, text: o.text, html: o.html });
+      return true;
+    }
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      const t = nodemailer.createTransport({ service: "gmail", auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, "") } });
+      await t.sendMail({ from: `"Abu Bakkar Academy" <${process.env.GMAIL_USER}>`, to: o.to, subject: o.subject, text: o.text, html: o.html });
+      return true;
+    }
+    if (process.env.RESEND_API_KEY && process.env.RESEND_FROM) {
+      const res = await fetch(resendUrl(), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: process.env.RESEND_FROM, to: o.to, subject: o.subject, text: o.text, html: o.html }),
+      }).catch(() => null);
+      return !!res?.ok;
+    }
+  } catch (e) { console.error("[mail] could not send:", e instanceof Error ? e.message : "unknown"); }
+  return false;
+}
 
 export type ReceiptInfo = {
   ref: string; parent_name: string; whatsapp: string; email: string | null; student: string;
@@ -40,13 +89,7 @@ export async function sendConfirmation(i: ReceiptInfo) {
       body: JSON.stringify({ messaging_product: "whatsapp", to: i.whatsapp, type: "text", text: { body: text } }),
     }).catch(() => null));
   }
-  if (process.env.RESEND_API_KEY && i.email) {
-    tasks.push(fetch(resendUrl(), {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: process.env.RESEND_FROM, to: i.email, subject: `Enrollment confirmed — ${i.ref}`, text }),
-    }).catch(() => null));
-  }
+  if (i.email && emailConfigured()) tasks.push(sendMail({ to: i.email, subject: `Enrollment confirmed — ${i.ref}`, text }));
   await Promise.all(tasks);
 }
 
@@ -84,7 +127,7 @@ export function alertRecipients(setting: string | undefined, adminEmails: string
 
 /** Emails the admin(s) that a parent uploaded a receipt and it is waiting for approval. Returns false if nothing was sent. */
 export async function sendPaymentAlert(to: string[], i: PaymentAlert): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM || !to.length) return false;
+  if (!emailConfigured() || !to.length) return false;
   const rows: [string, string][] = [
     ["Enrollment", i.ref], ["Parent", `${i.parent_name} (WhatsApp ${i.whatsapp})`], ["Student", i.student],
     ["Package", [i.program, i.classType, i.packageLabel].filter(Boolean).join(" · ")], ["Amount to receive", formatPKR(i.amount)],
@@ -102,10 +145,5 @@ ${i.adminUrl}`;
 <table style="border-collapse:collapse;width:100%;font-size:14px">${rows.map(([k, v]) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;color:#64748b;width:38%">${esc(k)}</td><td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-weight:600">${esc(v)}</td></tr>`).join("")}</table>
 <p style="margin:20px 0"><a href="${esc(i.adminUrl)}" style="background:#d4a017;color:#0b1f3a;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px;display:inline-block">Review and approve</a></p>
 <p style="font-size:12px;color:#64748b;margin:0">Check your statement first. A receipt image alone can be edited.</p></div>`;
-  const res = await fetch(resendUrl(), {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.RESEND_FROM, to, subject: `Receipt uploaded: ${i.ref} (${formatPKR(i.amount)})`, text, html }),
-  }).catch(() => null);
-  return !!res?.ok;
+  return sendMail({ to, subject: `Receipt uploaded: ${i.ref} (${formatPKR(i.amount)})`, text, html });
 }
