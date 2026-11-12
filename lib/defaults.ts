@@ -14,14 +14,14 @@ const pk = (id: string, program_id: string, class_type: "group" | "private", dur
   ({ id, program_id, class_type, duration_key, label, months, price_pkr, sessions, schedule_note, sort, active: true });
 
 export const DEFAULT_PACKAGES: Pkg[] = [
-  pk("d1", "d-cg", "group", "monthly", "Monthly", 1, 6000, null, "1 hour daily · 5 days per week", 1),
-  pk("d2", "d-cg", "group", "3m", "3 Months", 3, 16500, null, "1 hour daily · 5 days per week", 2),
-  pk("d3", "d-cg", "group", "6m", "6 Months", 6, 30000, null, "1 hour daily · 5 days per week", 3),
+  pk("d1", "d-cg", "group", "monthly", "Monthly", 1, 6000, null, "1 hour per class · 4 days per week", 1),
+  pk("d2", "d-cg", "group", "3m", "3 Months", 3, 16500, null, "1 hour per class · 4 days per week", 2),
+  pk("d3", "d-cg", "group", "6m", "6 Months", 6, 30000, null, "1 hour per class · 4 days per week", 3),
   pk("d4", "d-cg", "private", "monthly", "Monthly", 1, 13000, null, "1 hour per session · 2 days per week", 4),
   pk("d5", "d-cg", "private", "3m", "3 Months", 3, 36000, null, "1 hour per session · 2 days per week", 5),
   pk("d6", "d-cg", "private", "6m", "6 Months", 6, 69000, null, "1 hour per session · 2 days per week", 6),
-  pk("d7", "d-at", "group", "4w", "4 Weeks", 1, 6000, 12, "12 sessions over 4 weeks", 7),
-  pk("d8", "d-at", "private", "4w", "4 Weeks", 1, 15999, 12, "12 sessions over 4 weeks", 8),
+  pk("d7", "d-at", "group", "4w", "Monthly", 1, 6000, 12, "12 sessions per month", 7),
+  pk("d8", "d-at", "private", "4w", "Monthly", 1, 15999, 12, "12 sessions per month", 8),
 ];
 
 export const DEFAULT_AGE_GROUPS: AgeGroup[] = [

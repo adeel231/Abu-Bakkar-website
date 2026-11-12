@@ -33,7 +33,7 @@ export default async function Refund() {
         {p3 && pm && <li><b>Example:</b> 3 months Private One-on-One ({formatPKR(p3.price_pkr)}). You stop during month 1. Months used: 1 × {formatPKR(pm.price_pkr)}. Refund: {formatPKR(p3.price_pkr - pm.price_pkr)}.</li>}
       </ul>
 
-      <h2>Academic Tuition (4 weeks, 12 sessions)</h2>
+      <h2>Academic Tuition (per month, 12 sessions)</h2>
       <p>Full refund before the first session. After the first session there is no refund, but if we miss a session we give you a make-up session.</p>
 
       <h2>If we miss a class</h2>

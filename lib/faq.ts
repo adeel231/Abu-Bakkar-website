@@ -9,7 +9,7 @@ export function buildFaq(c: Catalog): [string, string][] {
 
   return [
     ["What are the monthly fees?",
-      `Character Grooming Online Group classes are ${fee} per month: 1 hour daily, 5 days a week, live online.`],
+      `Character Grooming Online Group classes are ${fee} per month: 1 hour per class, 4 days a week, live online.`],
     ["Which age group will my child join?",
       "Group A is ages 5 to 8 (manners and kindness). Group B is ages 8 to 12 (respect and patience). Group C is ages 12 to 15 (responsibility and emotional intelligence). Ages 8 and 12 fit two groups, so you choose one and our team confirms the best placement. Boys and girls can both enroll."],
     ["What are the class schedules?",

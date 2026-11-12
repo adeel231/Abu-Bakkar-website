@@ -164,14 +164,14 @@ Also asked as: "mobile ki aadat" · "screen time kam hoga"
 ## 5. Class timing and schedule
 
 **Q34. How many classes per week? How long is a class?**
-**Answer:** Online Group classes are 1 hour a day and 5 days a week. ✅
+**Answer:** Online Group classes are 1 hour per class and 4 days a week. ✅
 
 **Q35. What are the class timings?**
 Also asked as: "class ka time kya hota hai"
 **Answer:** When you enroll you pick a preferred time: morning 9 AM to 12 PM or afternoon 12 PM to 4 PM or evening 4 PM to 8 PM or night 8 PM to 10 PM. After your payment is verified we confirm your child's exact class time and send the joining link on WhatsApp. ✅
 
 **Q36. Which days are the classes?**
-**Answer:** Classes run 5 days a week. Our team will confirm the exact days with you on WhatsApp. ⚠️ Your answer: ______
+**Answer:** Classes run 4 days a week. Our team will confirm the exact days with you on WhatsApp. ⚠️ Your answer: ______
 
 **Q37. Can I choose the time myself?**
 **Answer:** Yes you choose a preferred time on the enrollment form. We confirm the final time after your payment is verified. ✅
@@ -198,7 +198,7 @@ Also asked as: "classes kab start hongi"
 
 **Q43. How much does Character Grooming cost?**
 Also asked as: "fees kitni hai" · "monthly fee" · "price"
-**Answer:** Online Group classes are Rs. 6000 per month. That is 1 hour a day and 5 days a week with live interactive teaching in an age based group. ✅
+**Answer:** Online Group classes are Rs. 6000 per month. That is 1 hour per class and 4 days a week with live interactive teaching in an age based group. ✅
 
 **Q44. Is there a discount for paying 3 or 6 months in advance?**
 Also asked as: "advance payment discount"
@@ -365,7 +365,7 @@ Also asked as: "bacha online class mein safe hai"
 **Answer:** Yes. Academic Tuition is a separate service from Character Grooming. It is online tuition for school subjects. You can enroll in Character Grooming without tuition. ✅
 
 **Q88. How much is tuition?**
-**Answer:** Rs. 6000 for 4 weeks. That includes 12 live online sessions in a group. ✅
+**Answer:** Rs. 6000 per month. That includes 12 live online sessions in a group. ✅
 
 **Q89. Which grades? Which subjects?**
 Also asked as: "kis class ke liye hai" · "kaun se subjects"

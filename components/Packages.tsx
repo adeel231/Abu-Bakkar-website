@@ -127,7 +127,7 @@ export function TuitionPackages({ c, wa }: { c: Catalog; wa: string }) {
       <div className="section">
         <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-gold">Second service</p>
         <h2 className="h2 mt-2 text-center">Academic Tuition</h2>
-        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Online tuition for school subjects, taught separately from Character Grooming. Choose your school grade and the subject you need. Each package is 12 live sessions over 4 weeks.</p>
+        <p className="mx-auto mt-3 max-w-2xl text-center text-slate-600">Online tuition for school subjects, taught separately from Character Grooming. Choose your school grade and the subject you need. Each package is 12 live sessions per month.</p>
         <div className="mx-auto mt-8 grid max-w-4xl gap-6 md:grid-cols-2">
           {TYPES.map((t) => {
             const pk = plan(c.packages, prog.id, t)[0];
@@ -140,7 +140,7 @@ export function TuitionPackages({ c, wa }: { c: Catalog; wa: string }) {
                   <h3 className="font-serif text-2xl font-bold">{CLASS_TYPE_LABEL[t]}</h3>
                   {st.full ? <Tag tone="red">Seats full</Tag> : st.limited ? <Tag>Limited seats</Tag> : null}
                 </div>
-                <p className="mt-5 font-serif text-4xl font-extrabold">{formatPKR(pk.price_pkr)}<span className="ml-2 font-sans text-base font-medium text-slate-500">for 4 weeks</span></p>
+                <p className="mt-5 font-serif text-4xl font-extrabold">{formatPKR(pk.price_pkr)}<span className="ml-2 font-sans text-base font-medium text-slate-500">per month</span></p>
                 <ul className="mt-4 space-y-2 text-slate-700">
                   <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />{pk.sessions ?? 12} live online sessions</li>
                   <li className="flex items-start gap-2"><Check size={18} className="mt-0.5 shrink-0 text-emerald" />Select your school grade and subject</li>

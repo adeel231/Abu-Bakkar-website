@@ -50,7 +50,7 @@ export function buildLiveFacts(c: Catalog, s: Record<string, string>): LiveFacts
   const at = c.programs.find((p) => p.kind === "tuition");
   if (at) {
     const t = plan(c.packages, at.id, "group")[0];
-    if (t) lines.push(`ACADEMIC TUITION (separate service): ${rs(t.price_pkr)} for 4 weeks${t.sessions ? ` with ${t.sessions} live online group sessions` : ""}. The parent chooses All subjects or Compulsory subjects and the price is the same.`);
+    if (t) lines.push(`ACADEMIC TUITION (separate service): ${rs(t.price_pkr)} per month${t.sessions ? ` with ${t.sessions} live online group sessions` : ""}. The parent chooses All subjects or Compulsory subjects and the price is the same.`);
   }
 
   if (c.ageGroups.length) {

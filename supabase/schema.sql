@@ -517,6 +517,12 @@ Evening (4 PM – 8 PM)
 Night (8 PM – 10 PM)')
 on conflict do nothing;
 
+-- Group classes are 4 days a week (was 5): update the schedule note of databases created earlier. Safe to run again.
+update packages set schedule_note = '1 hour per class · 4 days per week' where class_type = 'group' and schedule_note = '1 hour daily · 5 days per week';
+
+-- Academic Tuition is priced per month (was 4 weeks): update older databases. Safe to run again.
+update packages set label = 'Monthly', schedule_note = '12 sessions per month' where duration_key = '4w' and (label = '4 Weeks' or schedule_note = '12 sessions over 4 weeks');
+
 -- Replace OLD default hero text with the current design's text and the old placeholder payment text — only if they were never edited.
 update settings set value = 'Abu Bakkar Ne Sab Ka Dil Kyun Jeeta?' where key = 'hero_hook'
   and value in ('Abu Bakar Ne Sab Ka Dil Kyun Jeeta?', 'Abu Bakkar Jaisa Khoobsurat Akhlaaq');
@@ -571,14 +577,14 @@ insert into packages(program_id, class_type, duration_key, label, months, price_
 select p.id, v.class_type, v.duration_key, v.label, v.months, v.price, v.sessions, v.note, v.sort
 from programs p
 join (values
-  ('character-grooming', 'group',   'monthly', 'Monthly',  1,  6000, null::int, '1 hour daily · 5 days per week', 1),
-  ('character-grooming', 'group',   '3m',      '3 Months', 3, 16500, null,      '1 hour daily · 5 days per week', 2),
-  ('character-grooming', 'group',   '6m',      '6 Months', 6, 30000, null,      '1 hour daily · 5 days per week', 3),
+  ('character-grooming', 'group',   'monthly', 'Monthly',  1,  6000, null::int, '1 hour per class · 4 days per week', 1),
+  ('character-grooming', 'group',   '3m',      '3 Months', 3, 16500, null,      '1 hour per class · 4 days per week', 2),
+  ('character-grooming', 'group',   '6m',      '6 Months', 6, 30000, null,      '1 hour per class · 4 days per week', 3),
   ('character-grooming', 'private', 'monthly', 'Monthly',  1, 13000, null,      '1 hour per session · 2 days per week', 4),
   ('character-grooming', 'private', '3m',      '3 Months', 3, 36000, null,      '1 hour per session · 2 days per week', 5),
   ('character-grooming', 'private', '6m',      '6 Months', 6, 69000, null,      '1 hour per session · 2 days per week', 6),
-  ('academic-tuition',   'group',   '4w',      '4 Weeks',  1,  6000, 12,        '12 sessions over 4 weeks', 7),
-  ('academic-tuition',   'private', '4w',      '4 Weeks',  1, 15999, 12,        '12 sessions over 4 weeks', 8)
+  ('academic-tuition',   'group',   '4w',      'Monthly',  1,  6000, 12,        '12 sessions per month', 7),
+  ('academic-tuition',   'private', '4w',      'Monthly',  1, 15999, 12,        '12 sessions per month', 8)
 ) as v(slug, class_type, duration_key, label, months, price, sessions, note, sort) on v.slug = p.slug
 on conflict (program_id, class_type, duration_key) do nothing;
 

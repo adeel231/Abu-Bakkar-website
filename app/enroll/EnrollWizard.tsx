@@ -254,7 +254,7 @@ export default function EnrollWizard(p: Props) {
         {step === 2 && program && classType && (
           <div>
             <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
-            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions over 4 weeks." : "Pay monthly, or pay ahead and save."}</p>
+            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions per month." : "Pay monthly, or pay ahead and save."}</p>
             <div className="mt-5 grid gap-3">
               {options.map((o) => {
                 const sv = savings(o, monthlyPackage(p.packages, programId, classType));
