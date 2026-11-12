@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/pricing.test.mjs tests/db.test.mjs",
+    "test": "node --test tests/pricing.test.mjs tests/db.test.mjs tests/review-link.test.mjs",
     "chatbot:kb": "node scripts/build-chatbot-kb.mjs"
   },
   "dependencies": {

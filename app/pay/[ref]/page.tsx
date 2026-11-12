@@ -4,6 +4,7 @@ import Tracker from "@/components/Tracker";
 import PayForm from "./PayForm";
 import { db, dbConfigured, getSettings, type EnrollmentRow } from "@/lib/db";
 import { CLASS_TYPE_LABEL, formatPKR, isConfigured } from "@/lib/pricing";
+import { PAYMENT_NUMBER_FALLBACK } from "@/lib/chatbot/facts";
 import { WHATSAPP } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
@@ -65,11 +66,15 @@ export default async function PayPage({ params }: { params: { ref: string } }) {
               ))}
             </>
           ) : (
-            <div className="rounded-2xl bg-gold/15 p-4 text-sm text-navy">
-              <p className="font-semibold">Payment account details are shared on WhatsApp.</p>
-              <p className="mt-1">Tap the button below. Your enrollment is already saved under <b>{e.ref}</b>.</p>
-              <a className="btn-emerald mt-3" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(waMsg)}`} target="_blank" rel="noopener">Get payment details on WhatsApp</a>
-            </div>
+            <>
+              <p className="text-sm text-slate-600">Pay <b>{formatPKR(e.amount_pkr)}</b> to the number below from JazzCash or Easypaisa or your bank app. Write <b>{e.ref}</b> in the reference / comment if you can.</p>
+              <div className="rounded-2xl bg-emerald-50 p-4">
+                <p className="font-semibold text-emerald-700">Payment number</p>
+                <p className="select-all text-2xl font-extrabold tracking-wide text-slate-800">{PAYMENT_NUMBER_FALLBACK}</p>
+                <p className="mt-1 text-sm text-slate-600">Check that the account name matches before you confirm. Not sure? Message us on WhatsApp first.</p>
+              </div>
+              <a className="btn-emerald" href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(waMsg)}`} target="_blank" rel="noopener">Ask about payment on WhatsApp</a>
+            </>
           )}
         </div>
 

@@ -3,6 +3,7 @@
 import nodemailer from "nodemailer";
 import { formatPKR } from "./pricing";
 import { META_PIXEL_ID } from "./contact";
+import { reviewUrl } from "./reviewLink";
 
 const resendUrl = () => `${process.env.RESEND_API_URL || "https://api.resend.com"}/emails`;
 const esc = (v: unknown) => String(v ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch] as string));
@@ -112,6 +113,8 @@ export async function sendMetaPurchase(o: { ref: string; amount: number; fbp?: s
 export type PaymentAlert = {
   ref: string; parent_name: string; whatsapp: string; student: string; program: string; classType: string; packageLabel: string;
   amount: number; method: string; txn: string; adminUrl: string;
+  /** The payment to approve or reject. With it (and ADMIN_COOKIE_SECRET) each admin gets Approve and Reject buttons in the email. */
+  paymentId?: string; site?: string;
 };
 
 /** Who gets the "receipt uploaded" email: the addresses typed in Admin → Settings, otherwise every active admin account,
@@ -133,17 +136,31 @@ export async function sendPaymentAlert(to: string[], i: PaymentAlert): Promise<b
     ["Package", [i.program, i.classType, i.packageLabel].filter(Boolean).join(" · ")], ["Amount to receive", formatPKR(i.amount)],
     ["Paid by", i.method], ["Transaction ID", i.txn || "not given"],
   ];
-  const text = `A parent has uploaded a payment receipt. It is waiting for your approval.
+  const canDecide = !!(i.paymentId && i.site && process.env.ADMIN_COOKIE_SECRET);
+  const results = await Promise.all(to.map((admin) => {
+    const approve = canDecide ? reviewUrl(i.site!, i.paymentId!, "approve", admin) : "";
+    const reject = canDecide ? reviewUrl(i.site!, i.paymentId!, "reject", admin) : "";
+    const text = `A parent has uploaded a payment receipt. It is waiting for your approval.
 
 ${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}
 
-Open the receipt, check your JazzCash / Easypaisa / bank statement, and approve only if the money is really there:
-${i.adminUrl}`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0b1f3a">
+First check your JazzCash / Easypaisa / bank statement. Approve only if the money is really there.
+${canDecide ? `
+Approve: ${approve}
+Reject: ${reject}
+
+The links open a confirmation page. Nothing changes until you press the button there. They work for 3 days.
+` : ""}
+Admin panel: ${i.adminUrl}`;
+    const button = (href: string, label: string, bg: string, fg: string) => `<a href="${esc(href)}" style="background:${bg};color:${fg};text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px;display:inline-block;margin:0 8px 8px 0">${label}</a>`;
+    const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;color:#0b1f3a">
 <h2 style="margin:0 0 6px">Receipt uploaded</h2>
 <p style="margin:0 0 16px;color:#475569">A parent has uploaded a payment receipt. It is waiting for your approval.</p>
 <table style="border-collapse:collapse;width:100%;font-size:14px">${rows.map(([k, v]) => `<tr><td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;color:#64748b;width:38%">${esc(k)}</td><td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-weight:600">${esc(v)}</td></tr>`).join("")}</table>
-<p style="margin:20px 0"><a href="${esc(i.adminUrl)}" style="background:#d4a017;color:#0b1f3a;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:999px;display:inline-block">Review and approve</a></p>
-<p style="font-size:12px;color:#64748b;margin:0">Check your statement first. A receipt image alone can be edited.</p></div>`;
-  return sendMail({ to, subject: `Receipt uploaded: ${i.ref} (${formatPKR(i.amount)})`, text, html });
+<p style="margin:20px 0 6px">${canDecide ? button(approve, "Approve", "#0e7c5a", "#ffffff") + button(reject, "Reject", "#dc2626", "#ffffff") : button(i.adminUrl, "Review and approve", "#d4a017", "#0b1f3a")}</p>
+<p style="font-size:12px;color:#64748b;margin:0 0 6px">Check your statement first. A receipt image alone can be edited.${canDecide ? " The buttons open a confirmation page and nothing changes until you confirm there. They work for 3 days." : ""}</p>
+<p style="font-size:12px;margin:0"><a href="${esc(i.adminUrl)}" style="color:#64748b">Open the admin panel</a></p></div>`;
+    return sendMail({ to: admin, subject: `Receipt uploaded: ${i.ref} (${formatPKR(i.amount)})`, text, html });
+  }));
+  return results.some(Boolean);
 }
