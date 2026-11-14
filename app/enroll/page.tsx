@@ -13,6 +13,8 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
   const timingOptions = (settings.timing_options || "Morning (9 AM – 12 PM)\nAfternoon (12 PM – 4 PM)\nEvening (4 PM – 8 PM)\nNight (8 PM – 10 PM)")
     .split("\n").map((s) => s.trim()).filter(Boolean);
   const programs = c.programs.filter((p) => p.status === "open")
+    // Academic Tuition is hidden from the enrollment form for now. To bring it back, delete the next line.
+    .filter((p) => p.kind !== "tuition")
     .map((p) => ({ id: p.id, slug: p.slug, name: p.name, kind: p.kind, tagline: p.tagline, description: p.description }));
 
   return (
