@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Baby, Check, ChevronLeft, HeartHandshake, User, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/Chrome";
 import {
-  CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
+  CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, plan, savings,
   seatsFor, totalPayable, type AgeGroup, type BatchLite, type ClassType, type Pkg,
 } from "@/lib/pricing";
 import { captureCampaign, currentSource, sessionId, track } from "@/components/Tracker";
@@ -56,6 +56,8 @@ export default function EnrollWizard(p: Props) {
   const [subjectChoice, setSubjectChoice] = useState<SubjectChoice | "">("");
   const [f, setF] = useState({ parent_name: "", whatsapp: "", email: "", city: "", student_first_name: "", timing: "", consent: false, website: "" });
   const [step, setStep] = useState(0);
+  // The Package step has two screens: first the plan names only, then the price of the chosen plan.
+  const [planPicked, setPlanPicked] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const started = useRef(false);
@@ -118,7 +120,7 @@ export default function EnrollWizard(p: Props) {
     return seatsFor(p.batches, programId, classType, ageGroupId || null).batches.filter((b) => b.left > 0);
   }, [p.batches, programId, classType, ageGroupId]);
 
-  function go(n: number) { setErr(""); setStep(n); setTimeout(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30); }
+  function go(n: number) { setErr(""); if (n === 3) setPlanPicked(step > 3); setStep(n); setTimeout(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 30); }
   function touched() { if (!started.current) { started.current = true; track("form_start"); } }
   const set = (k: keyof typeof f, v: string | boolean) => { touched(); setF((o) => ({ ...o, [k]: v })); };
 
@@ -145,6 +147,7 @@ export default function EnrollWizard(p: Props) {
   }
   // Back skips the steps that had only one choice.
   function back() {
+    if (step === 3 && planPicked) { setErr(""); return setPlanPicked(false); }   // price screen → plan names
     let i = step - 1;
     while (i > 0 && !visible(i, programId, audience, classType)) i--;
     go(Math.max(0, i));
@@ -229,7 +232,7 @@ export default function EnrollWizard(p: Props) {
       <p className="mt-2 text-sm font-semibold text-emerald-700 sm:hidden">Step {pos + 1} of {shown.length}: {shown[pos]?.label}</p>
 
       {/* running summary */}
-      {pkg && step > 0 && (
+      {pkg && step > 0 && step !== 3 && (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 text-white">
           <div className="min-w-0 text-sm">
             <p className="truncate font-semibold">{program?.name}{audience && !tuition ? ` · ${AUDIENCE_LABEL[audience]}` : ""} · {classType ? CLASS_TYPE_LABEL[classType] : ""}</p>
@@ -308,32 +311,58 @@ export default function EnrollWizard(p: Props) {
         {/* STEP 3 — package */}
         {step === 3 && program && classType && (
           <div>
-            <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
-            <p className="mt-1 text-slate-600">{tuition ? "12 live sessions per month." : "Pay monthly, or pay ahead and save."}</p>
-            <div className="mt-5 grid gap-3">
-              {options.map((o) => {
-                const sv = savings(o, monthlyPackage(p.packages, programId, classType));
-                const monthly = o.months === 1;
-                return (
-                  <button key={o.id} type="button" onClick={() => setPkgId(o.id)} className={card(pkgId === o.id)}>
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="flex items-center gap-2">
-                        <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${pkgId === o.id ? "border-emerald bg-emerald text-white" : "border-slate-300"}`}>{pkgId === o.id && <Check size={12} />}</span>
-                        <span className="font-bold text-navy">{o.label}{monthly && !tuition ? " (standard)" : ""}</span>
-                        {sv > 0 && tag(`Save ${formatPKR(sv)}`, "green")}
-                      </span>
-                      <span className="text-right">
-                        {sv > 0 && <span className="block text-sm text-slate-400 line-through">{formatPKR(o.price_pkr + sv)}</span>}
-                        <span className={`font-extrabold text-navy ${monthly ? "text-2xl" : "text-xl"}`}>{formatPKR(o.price_pkr)}</span>
-                      </span>
-                    </span>
-                    <span className="mt-1 block pl-7 text-sm text-slate-600">
-                      {o.months > 1 ? `${formatPKR(perMonth(o))} per month · pay once for ${o.months} months` : tuition ? `${o.sessions ?? 12} sessions · pay once` : "Pay month by month"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {/* Screen 1: only the plan names. Tapping one opens its price. */}
+            {!planPicked && (
+              <>
+                <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
+                <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Plans">
+                  {options.map((o) => {
+                    const [name, length] = o.label.split(" · ");
+                    return (
+                      <button key={o.id} type="button" role="radio" aria-checked={pkgId === o.id}
+                        onClick={() => { touched(); setPkgId(o.id); setErr(""); setPlanPicked(true); }}
+                        className={card(pkgId === o.id)}>
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="text-xl font-extrabold text-navy">{name}</span>
+                          <span className="shrink-0 text-base font-semibold text-slate-600">{length ?? `${o.months} Month${o.months > 1 ? "s" : ""}`}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Screen 2: the price of the chosen plan, with the discount big and bright */}
+            {planPicked && pkg && (() => {
+              const mp = monthlyPackage(p.packages, programId, classType);
+              const sv = savings(pkg, mp);
+              const [name, length] = pkg.label.split(" · ");
+              return (
+                <>
+                <h2 className="text-2xl font-bold text-navy">{name}</h2>
+                <p className="mt-1 text-base font-semibold text-slate-600">{length ?? `${pkg.months} Month${pkg.months > 1 ? "s" : ""}`}</p>
+                <div className="mt-5 rounded-2xl border-2 border-emerald bg-emerald-50 p-5 text-center">
+                  {sv > 0 && mp ? (
+                    <>
+                      {/* 1. the normal monthly fee  2. the course price  3. the discount */}
+                      <p className="flex flex-wrap items-baseline justify-center gap-x-3 gap-y-1">
+                        <span className="text-xl font-bold text-slate-600">{formatPKR(mp.price_pkr)} per month</span>
+                        <span className="text-3xl font-light text-slate-400" aria-hidden="true">/</span>
+                        <span className="text-3xl font-extrabold text-navy">{formatPKR(pkg.price_pkr)} <span className="text-lg font-bold">for {pkg.months} months</span></span>
+                      </p>
+                      <p className="mt-3 inline-block rounded-full bg-red-600 px-4 py-1.5 text-lg font-extrabold text-white shadow-sm">Discount {formatPKR(sv)}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-4xl font-extrabold text-navy">{formatPKR(pkg.price_pkr)}</p>
+                      <p className="mt-1 text-lg font-bold text-navy">{pkg.months === 1 && !tuition ? "per month" : ""}</p>
+                    </>
+                  )}
+                </div>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -458,7 +487,7 @@ export default function EnrollWizard(p: Props) {
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
           {step > 0 ? <button type="button" onClick={back} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
-          {step >= 3 && step < REVIEW && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
+          {step >= 3 && step < REVIEW && !(step === 3 && !planPicked) && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
           {step === REVIEW && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
         </div>
       </div>
