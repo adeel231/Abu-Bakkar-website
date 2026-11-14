@@ -15,7 +15,9 @@ const schema = z.object({
   email: z.string().trim().email().max(120).optional().or(z.literal("")),
   city: z.string().trim().min(2).max(60),
   student_first_name: z.string().trim().min(1).max(50),
-  student_age: z.coerce.number().int().min(3).max(19),
+  // Parent Grooming has no child age; the database requires it for everything else.
+  student_age: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().int().min(3).max(19).optional()),
+  audience: z.enum(["children", "parent"]).optional().or(z.literal("")),   // Character Grooming: for children or for parents
   age_group_id: uuid, subject_id: uuid, preferred_batch_id: uuid,
   subject_choice: z.enum(["all", "compulsory"]).optional().or(z.literal("")),   // tuition: all subjects or the compulsory subjects
   school_grade: text(30), preferred_timing: text(200),

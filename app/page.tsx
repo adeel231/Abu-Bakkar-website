@@ -43,7 +43,7 @@ export default async function Home() {
 
   const cg = c.programs.find((p) => p.kind === "character");
   const mainPrice = cg ? monthlyPackage(c.packages, cg.id, "group")?.price_pkr : undefined;
-  const price = formatPKR(mainPrice ?? 6000);
+  const price = formatPKR(mainPrice ?? 7000);
   const limited = c.fromDb && anyLimited(c);
   const enrollHref = "/enroll";
   const faq = buildFaq(c);

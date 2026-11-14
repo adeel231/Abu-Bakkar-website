@@ -20,7 +20,7 @@ export type Catalog = {
 
 export type EnrollmentRow = {
   id: string; ref: string; parent_id: string | null; student_id: string | null; parent_name: string; whatsapp: string; email: string | null;
-  child_first_name: string; child_age: number; grade: string | null; city: string; program_id: string | null; program_name: string | null;
+  child_first_name: string; child_age: number | null; grade: string | null; city: string; program_id: string | null; program_name: string | null;
   class_type: ClassType | null; duration_key: string | null; term_months: number | null; package_label: string | null; package_id: string | null;
   age_group_id: string | null; subject_name: string | null; class_batch_id: string | null; preferred_batch_id: string | null;
   preferred_schedule: string | null; amount_pkr: number; status: string; payment_method: string | null; payment_txn_id: string | null;

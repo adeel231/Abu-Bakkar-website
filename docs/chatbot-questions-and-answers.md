@@ -198,11 +198,11 @@ Also asked as: "classes kab start hongi"
 
 **Q43. How much does Character Grooming cost?**
 Also asked as: "fees kitni hai" · "monthly fee" · "price"
-**Answer:** Online Group classes are Rs. 6000 per month. That is 1 hour per class and 4 days a week with live interactive teaching in an age based group. ✅
+**Answer:** Online Group classes are Rs. 7000 per month. That is 1 hour per class and 4 days a week with live interactive teaching. Character Grooming is offered as Children Grooming and as Parent Grooming at the same prices. ✅
 
 **Q44. Is there a discount for paying 3 or 6 months in advance?**
 Also asked as: "advance payment discount"
-**Answer:** Yes. 3 months cost Rs. 16500 and you save Rs. 1500. 6 months cost Rs. 30000 and you save Rs. 6000. You can always choose to pay monthly instead. ✅
+**Answer:** Yes. The Basic Course is 3 months for Rs. 15500 instead of Rs. 21000. The Advanced Course is 6 months for Rs. 30000 instead of Rs. 42000. You can always choose to pay monthly at Rs. 7000 instead. ✅
 
 **Q45. Do you have private one-on-one classes?**
 Also asked as: "alag se private class" · "individual teacher"
@@ -309,7 +309,7 @@ Also asked as: "paisay wapis milte hain" · "refund policy"
 **Answer:** Yes you can stop any time and you will not be charged again. The month that has already started is not refunded. ✅
 
 **Q74. I paid for 3 or 6 months. What if I stop early?**
-**Answer:** The months already started are counted at the regular monthly price. We refund the full months that are left. For example if you paid Rs. 30000 for 6 months and stop during month 2 the months used are 2 times Rs. 6000 which is Rs. 12000 and the refund is Rs. 18000. ✅
+**Answer:** The months already started are counted at the regular monthly price. We refund the full months that are left. For example if you paid Rs. 30000 for 6 months and stop during month 2 the months used are 2 times Rs. 7000 which is Rs. 14000 and the refund is Rs. 16000. ✅
 
 **Q75. How do I ask for a refund? How long does it take?**
 **Answer:** Send us a WhatsApp message on 03335767202 with your Enrollment ID. We send the money back to the account you paid from within 7 working days. ✅

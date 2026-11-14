@@ -57,7 +57,7 @@ export default async function Enrollments({ searchParams }: { searchParams: { st
               <details key={r.id} className="rounded-2xl bg-white p-4 shadow-sm" open={r.status === "verified" && !r.class_batch_id}>
                 <summary className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-1">
                   <b className="text-navy">{r.ref}</b><Badge s={r.status} />
-                  <span>{r.parent_name} · {r.child_first_name} ({r.child_age}y{r.grade ? `, ${r.grade}` : ""})</span>
+                  <span>{r.parent_name} · {r.child_first_name}{r.child_age != null ? ` (${r.child_age}y${r.grade ? `, ${r.grade}` : ""})` : ""}</span>
                   <span className="text-slate-500">{r.program_name ?? "Earlier enrollment"} {r.class_type ? `· ${CLASS_TYPE_LABEL[r.class_type]}` : ""} {r.package_label ? `· ${r.package_label}` : ""}</span>
                   {r.status === "verified" && !r.class_batch_id && <span className="rounded-full bg-gold/20 px-2 py-0.5 text-xs font-semibold text-navy">needs a class</span>}
                   <span className="ml-auto font-semibold">{formatPKR(r.amount_pkr)}</span>

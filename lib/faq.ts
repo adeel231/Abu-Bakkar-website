@@ -5,7 +5,7 @@ import { formatPKR, monthlyPackage } from "./pricing";
 export function buildFaq(c: Catalog): [string, string][] {
   const cg = c.programs.find((p) => p.kind === "character");
   const monthly = cg ? monthlyPackage(c.packages, cg.id, "group") : undefined;
-  const fee = formatPKR(monthly?.price_pkr ?? 6000);
+  const fee = formatPKR(monthly?.price_pkr ?? 7000);
 
   return [
     ["What are the monthly fees?",

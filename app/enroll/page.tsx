@@ -8,7 +8,7 @@ import { WHATSAPP, WHATSAPP_PRETTY } from "@/lib/contact";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Enroll — Abu Bakkar Academy" };
 
-export default async function EnrollPage({ searchParams }: { searchParams: { program?: string; type?: string; term?: string } }) {
+export default async function EnrollPage({ searchParams }: { searchParams: { program?: string; type?: string; term?: string; for?: string } }) {
   const [c, settings] = await Promise.all([getCatalog(), getSettings()]);
   const timingOptions = (settings.timing_options || "Morning (9 AM – 12 PM)\nAfternoon (12 PM – 4 PM)\nEvening (4 PM – 8 PM)\nNight (8 PM – 10 PM)")
     .split("\n").map((s) => s.trim()).filter(Boolean);
@@ -37,7 +37,7 @@ export default async function EnrollPage({ searchParams }: { searchParams: { pro
               subjects={c.subjects.map((s) => ({ id: s.id, name: s.name }))}
               batches={c.batches.map((b) => ({ id: b.id, name: b.name, program_id: b.program_id, class_type: b.class_type, age_group_id: b.age_group_id, timing: b.timing, capacity: b.capacity, left: b.left, active: b.active }))}
               timingOptions={timingOptions} threshold={c.threshold} whatsapp={WHATSAPP}
-              initial={{ program: searchParams.program, type: searchParams.type, term: searchParams.term }}
+              initial={{ program: searchParams.program, type: searchParams.type, term: searchParams.term, for: searchParams.for }}
             />
           </div>
         )}

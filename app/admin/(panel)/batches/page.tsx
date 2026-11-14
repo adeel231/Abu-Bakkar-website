@@ -45,7 +45,7 @@ export default async function Batches({ searchParams }: { searchParams: { msg?: 
             return (
               <div key={b.id} className="rounded-2xl bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between"><p className="font-bold text-navy">{b.name}{b.active ? "" : " (inactive)"}</p><p className="text-sm font-semibold text-emerald-700">{mine.length} / {b.capacity} seats used</p></div>
-                {mine.length > 0 && <p className="mt-1 text-sm text-slate-600">{mine.map((s) => `${s.child_first_name} (${s.child_age})`).join(", ")}</p>}
+                {mine.length > 0 && <p className="mt-1 text-sm text-slate-600">{mine.map((s) => s.child_age != null ? `${s.child_first_name} (${s.child_age})` : s.child_first_name).join(", ")}</p>}
                 <details className="mt-3"><summary className="cursor-pointer text-sm underline">Edit</summary><div className="mt-3"><BatchForm b={b} programs={programs} groups={groups} /></div></details>
               </div>
             );

@@ -37,7 +37,7 @@ export default async function People({ searchParams }: { searchParams: { q?: str
               <ul className="mt-3 space-y-2 text-sm">
                 {kids.map((k) => (
                   <li key={k.id} className="rounded-xl bg-slate-50 p-3">
-                    <b>{k.first_name}</b>, age {k.age}{k.school_grade ? `, ${k.school_grade}` : ""}
+                    <b>{k.first_name}</b>{k.age != null ? `, age ${k.age}` : ""}{k.school_grade ? `, ${k.school_grade}` : ""}
                     {enrs.filter((e) => e.student_id === k.id).map((e) => (
                       <p key={e.id} className="mt-1 flex flex-wrap items-center gap-2 text-slate-600"><Badge s={e.status} /> {e.ref} · {e.program_name} · {e.package_label} · {formatPKR(e.amount_pkr)}</p>
                     ))}

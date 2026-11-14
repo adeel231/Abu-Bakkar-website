@@ -173,6 +173,10 @@ alter table enrollments add column if not exists preferred_batch_id uuid referen
 alter table enrollments add column if not exists fbp text;
 alter table enrollments add column if not exists fbc text;
 alter table enrollments add column if not exists consent_version text;
+-- Character Grooming is for children ('children') or for parents ('parent'). A Parent Grooming enrollment has no child age.
+alter table enrollments add column if not exists audience text;
+alter table enrollments alter column child_age drop not null;
+alter table students alter column age drop not null;
 create index if not exists enrollments_batch_idx on enrollments(class_batch_id);
 create index if not exists enrollments_parent_idx on enrollments(parent_id);
 create index if not exists enrollments_status_idx on enrollments(status);
@@ -270,6 +274,7 @@ declare
   v_parent uuid; v_student uuid; v_ref text; v_id uuid; v_has boolean; v_left int; v_ex enrollments%rowtype;
   v_grade text := nullif(trim(coalesce(p->>'school_grade','')), ''); v_subject_label text;
   v_alpha constant text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; v_try int := 0;
+  v_aud text := coalesce(nullif(p->>'audience', ''), 'children'); v_prog_name text;
 begin
   if coalesce((p->>'consent')::boolean, false) is not true then raise exception 'CONSENT_REQUIRED'; end if;
   select * into v_pkg from packages where id = (p->>'package_id')::uuid and active;
@@ -281,13 +286,22 @@ begin
     raise exception 'PRICE_CHANGED';
   end if;
 
-  v_age := (p->>'student_age')::int;
-  if v_age is null or v_age < 3 or v_age > 19 then raise exception 'BAD_AGE'; end if;
+  if v_aud not in ('children', 'parent') or (v_aud = 'parent' and v_prog.kind <> 'character') then raise exception 'BAD_AUDIENCE'; end if;
+  v_prog_name := v_prog.name;
+  if v_prog.kind = 'character' then
+    v_prog_name := v_prog.name || ' · ' || case v_aud when 'parent' then 'Parent Grooming' else 'Children Grooming' end;
+  end if;
+
+  -- Parent Grooming is for the parent, so there is no child age or age group.
+  v_age := case when v_aud = 'parent' then null else nullif(p->>'student_age', '')::int end;
+  if v_aud <> 'parent' and (v_age is null or v_age < 3 or v_age > 19) then raise exception 'BAD_AGE'; end if;
   if v_first is null or v_first = '' or v_wa is null or coalesce(trim(p->>'parent_name'),'') = '' then
     raise exception 'MISSING_DETAILS';
   end if;
 
-  if v_prog.kind = 'character' then
+  if v_aud = 'parent' then
+    null;
+  elsif v_prog.kind = 'character' then
     select * into v_ag from age_groups where id = (p->>'age_group_id')::uuid and active;
     if not found then raise exception 'AGE_GROUP_REQUIRED'; end if;
     if v_age < v_ag.min_age or v_age > v_ag.max_age then raise exception 'AGE_GROUP_MISMATCH'; end if;
@@ -328,7 +342,7 @@ begin
     insert into students(parent_id, first_name, age, school_grade) values (v_parent, v_first, v_age, v_grade)
     returning id into v_student;
   else
-    update students set age = v_age, school_grade = coalesce(v_grade, school_grade) where id = v_student;
+    update students set age = coalesce(v_age, age), school_grade = coalesce(v_grade, school_grade) where id = v_student;
   end if;
 
   loop
@@ -342,13 +356,14 @@ begin
     ref, parent_name, whatsapp, email, child_first_name, child_age, grade, city, program_id, preferred_schedule,
     amount_pkr, status, source, utm, consent_at, consent_version,
     parent_id, student_id, package_id, program_name, class_type, duration_key, term_months, package_label,
-    age_group_id, subject_id, subject_name, preferred_batch_id, fbp, fbc
+    age_group_id, subject_id, subject_name, preferred_batch_id, fbp, fbc, audience
   ) values (
     v_ref, trim(p->>'parent_name'), v_wa, nullif(trim(coalesce(p->>'email','')), ''), v_first, v_age, v_grade,
     trim(p->>'city'), v_prog.id, nullif(trim(coalesce(p->>'preferred_timing','')), ''),
     v_pkg.price_pkr, 'pending', coalesce(nullif(p->>'source',''), 'direct'), p->'utm', now(), 'v1',
-    v_parent, v_student, v_pkg.id, v_prog.name, v_pkg.class_type, v_pkg.duration_key, v_pkg.months, v_pkg.label,
-    v_ag.id, v_subj.id, coalesce(v_subj.name, v_subject_label), nullif(p->>'preferred_batch_id','')::uuid, nullif(p->>'fbp',''), nullif(p->>'fbc','')
+    v_parent, v_student, v_pkg.id, v_prog_name, v_pkg.class_type, v_pkg.duration_key, v_pkg.months, v_pkg.label,
+    v_ag.id, v_subj.id, coalesce(v_subj.name, v_subject_label), nullif(p->>'preferred_batch_id','')::uuid, nullif(p->>'fbp',''), nullif(p->>'fbc',''),
+    case when v_prog.kind = 'character' then v_aud end
   ) returning id into v_id;
 
   return jsonb_build_object('ref', v_ref, 'amount', v_pkg.price_pkr, 'enrollment_id', v_id, 'existing', false);
@@ -577,9 +592,9 @@ insert into packages(program_id, class_type, duration_key, label, months, price_
 select p.id, v.class_type, v.duration_key, v.label, v.months, v.price, v.sessions, v.note, v.sort
 from programs p
 join (values
-  ('character-grooming', 'group',   'monthly', 'Monthly',  1,  6000, null::int, '1 hour per class · 4 days per week', 1),
-  ('character-grooming', 'group',   '3m',      '3 Months', 3, 16500, null,      '1 hour per class · 4 days per week', 2),
-  ('character-grooming', 'group',   '6m',      '6 Months', 6, 30000, null,      '1 hour per class · 4 days per week', 3),
+  ('character-grooming', 'group',   'monthly', 'Monthly',  1,  7000, null::int, '1 hour per class · 4 days per week', 1),
+  ('character-grooming', 'group',   '3m',      'Basic Course · 3 Months', 3, 15500, null, '1 hour per class · 4 days per week', 2),
+  ('character-grooming', 'group',   '6m',      'Advanced Course · 6 Months', 6, 30000, null, '1 hour per class · 4 days per week', 3),
   ('character-grooming', 'private', 'monthly', 'Monthly',  1, 13000, null,      '1 hour per session · 2 days per week', 4),
   ('character-grooming', 'private', '3m',      '3 Months', 3, 36000, null,      '1 hour per session · 2 days per week', 5),
   ('character-grooming', 'private', '6m',      '6 Months', 6, 69000, null,      '1 hour per session · 2 days per week', 6),
@@ -592,3 +607,15 @@ on conflict (program_id, class_type, duration_key) do nothing;
 update packages set price_pkr = 6000
  where duration_key = '4w' and class_type = 'group' and price_pkr = 5999
    and program_id = (select id from programs where slug = 'academic-tuition');
+
+-- Character Grooming (Children and Parent Grooming) group plans: Monthly Rs. 7,000, Basic Course 3 months Rs. 15,500,
+-- Advanced Course 6 months Rs. 30,000 — only where the old default price / label was never edited. Safe to run again.
+update packages set price_pkr = 7000
+ where class_type = 'group' and duration_key = 'monthly' and price_pkr = 6000
+   and program_id = (select id from programs where slug = 'character-grooming');
+update packages set price_pkr = 15500, label = 'Basic Course · 3 Months'
+ where class_type = 'group' and duration_key = '3m' and price_pkr = 16500 and label = '3 Months'
+   and program_id = (select id from programs where slug = 'character-grooming');
+update packages set label = 'Advanced Course · 6 Months'
+ where class_type = 'group' and duration_key = '6m' and label = '6 Months'
+   and program_id = (select id from programs where slug = 'character-grooming');

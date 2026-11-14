@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, User, Users } from "lucide-react";
+import { Baby, Check, ChevronLeft, HeartHandshake, User, Users } from "lucide-react";
 import { WhatsAppIcon } from "@/components/Chrome";
 import {
   CLASS_TYPE_LABEL, formatPKR, groupsForAge, isBoundaryAge, isLimited, monthlyPackage, perMonth, plan, savings,
@@ -14,7 +14,7 @@ type Program = { id: string; slug: string; name: string; kind: "character" | "tu
 type Subject = { id: string; name: string };
 type Props = {
   programs: Program[]; packages: Pkg[]; ageGroups: AgeGroup[]; subjects: Subject[]; batches: BatchLite[];
-  timingOptions: string[]; threshold: number; whatsapp: string; initial: { program?: string; type?: string; term?: string };
+  timingOptions: string[]; threshold: number; whatsapp: string; initial: { program?: string; type?: string; term?: string; for?: string };
 };
 
 const GRADES = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Other"];
@@ -23,7 +23,16 @@ const SUBJECT_CHOICES: [SubjectChoice, string, string][] = [
   ["all", "All subjects", "Every subject we teach."],
   ["compulsory", "Compulsory subjects", "Only the compulsory subjects."],
 ];
-const STEPS = ["Service", "Class type", "Package", "Student", "Details", "Review"];
+// Character Grooming is offered for children or for parents (same plans and prices).
+type Audience = "children" | "parent";
+const AUDIENCES: [Audience, string, string][] = [
+  ["children", "Children Grooming", "For boys and girls aged 5 to 15."],
+  ["parent", "Parent Grooming", "For mothers and fathers."],
+];
+const AUDIENCE_LABEL: Record<Audience, string> = { children: "Children Grooming", parent: "Parent Grooming" };
+// Step numbers: 0 Service · 1 For · 2 Class type · 3 Package · 4 Student · 5 Details · 6 Review
+const STEPS = ["Service", "For", "Class type", "Package", "Student", "Details", "Review"];
+const REVIEW = 6;
 
 export default function EnrollWizard(p: Props) {
   const router = useRouter();
@@ -36,8 +45,10 @@ export default function EnrollWizard(p: Props) {
   const askedType = (p.initial.type === "group" || p.initial.type === "private") ? p.initial.type : "";
   // An old link may still ask for "private": fall back to the only type on offer.
   const startType: ClassType | "" = askedType && startTypes.includes(askedType) ? askedType : startTypes.length === 1 ? startTypes[0] : "";
+  const startAudience: Audience | "" = p.initial.for === "children" || p.initial.for === "parent" ? p.initial.for : "";
   const [programId, setProgramId] = useState(startProgram);
   const [classType, setClassType] = useState<ClassType | "">(startProgram ? startType : "");
+  const [audience, setAudience] = useState<Audience | "">(startAudience);
   const [pkgId, setPkgId] = useState("");
   const [age, setAge] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
@@ -51,6 +62,7 @@ export default function EnrollWizard(p: Props) {
 
   const program = p.programs.find((x) => x.id === programId);
   const tuition = program?.kind === "tuition";
+  const forParent = !tuition && audience === "parent";
   const options = useMemo(() => (programId && classType ? plan(p.packages, programId, classType) : []), [p.packages, programId, classType]);
   const pkg = p.packages.find((x) => x.id === pkgId);
   const ageNum = Number(age);
@@ -58,16 +70,31 @@ export default function EnrollWizard(p: Props) {
   const eligible = ageOk ? groupsForAge(ageNum, p.ageGroups) : [];
   const group = p.ageGroups.find((g) => g.id === ageGroupId);
 
+  const isCharacter = (progId: string) => p.programs.find((x) => x.id === progId)?.kind === "character";
+  // Whether a step is shown for a set of choices. Steps with only one possible answer are skipped.
+  function visible(i: number, progId: string, aud: Audience | "", type: ClassType | ""): boolean {
+    if (i === 1) return isCharacter(progId);
+    if (i === 2) return typesFor(progId).length > 1;
+    if (i === 3) return !type || plan(p.packages, progId, type).length > 1;
+    if (i === 4) return !(isCharacter(progId) && aud === "parent");
+    return true;
+  }
+  const nextVisible = (from: number, progId: string, aud: Audience | "", type: ClassType | "") => {
+    let i = from + 1; while (i < REVIEW && !visible(i, progId, aud, type)) i++; return i;
+  };
+
   // Jump to the first unfinished step when the page was opened with choices already made (from the homepage buttons).
   useEffect(() => {
-    if (startProgram && startType) {
+    if (!startProgram) return;
+    if (isCharacter(startProgram) && !startAudience) return setStep(1);   // Children or Parent Grooming first
+    if (startType) {
       const opts = plan(p.packages, startProgram, startType);
       const t = p.programs.find((x) => x.id === startProgram)?.kind === "tuition";
       const want = p.initial.term && opts.find((o) => o.duration_key === p.initial.term);
       const pick = want || (t ? opts[0] : monthlyPackage(p.packages, startProgram, startType) ?? opts[0]);
       if (pick) setPkgId(pick.id);
-      setStep(t || want || opts.length <= 1 ? 3 : 2);
-    } else if (startProgram) setStep(1);
+      setStep(nextVisible(t || want ? 3 : 2, startProgram, startAudience, startType));
+    } else setStep(nextVisible(isCharacter(startProgram) ? 1 : 0, startProgram, startAudience, ""));
   }, []); // eslint-disable-line
 
   // Choosing an age auto-selects the age group when there is only one fit.
@@ -96,49 +123,57 @@ export default function EnrollWizard(p: Props) {
   const set = (k: keyof typeof f, v: string | boolean) => { touched(); setF((o) => ({ ...o, [k]: v })); };
 
   function chooseProgram(id: string) {
-    setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectChoice("");
-    const ts = typesFor(id);
-    if (ts.length === 1) chooseType(ts[0], id);   // only one class type on offer: nothing to choose
-    else go(1);
+    setProgramId(id); setClassType(""); setPkgId(""); setAgeGroupId(""); setGrade(""); setSubjectChoice(""); setAudience("");
+    if (isCharacter(id)) return go(1);   // Children Grooming or Parent Grooming first
+    afterAudience(id, "");
   }
-  function chooseType(t: ClassType, progId = programId) {
+  function chooseAudience(a: Audience) {
+    touched(); setAudience(a); setAgeGroupId("");
+    afterAudience(programId, a);
+  }
+  function afterAudience(progId: string, aud: Audience | "") {
+    const ts = typesFor(progId);
+    if (ts.length === 1) chooseType(ts[0], progId, aud);   // only one class type on offer: nothing to choose
+    else go(2);
+  }
+  function chooseType(t: ClassType, progId = programId, aud: Audience | "" = audience) {
     setClassType(t);
     const opts = plan(p.packages, progId, t);
     const isTuition = p.programs.find((x) => x.id === progId)?.kind === "tuition";
     setPkgId((isTuition ? opts[0] : monthlyPackage(p.packages, progId, t) ?? opts[0])?.id ?? "");
-    go(opts.length <= 1 ? 3 : 2);
+    go(nextVisible(2, progId, aud, t));
   }
   // Back skips the steps that had only one choice.
   function back() {
-    const oneType = typesFor(programId).length <= 1;
-    if (step === 3 && options.length <= 1) return go(oneType ? 0 : 1);
-    if (step === 2 && oneType) return go(0);
-    go(step - 1);
+    let i = step - 1;
+    while (i > 0 && !visible(i, programId, audience, classType)) i--;
+    go(Math.max(0, i));
   }
 
   function validate(s: number): string {
     if (s === 0 && !programId) return "Please choose a service.";
-    if (s === 1 && !classType) return "Please choose a class type.";
-    if (s === 2 && !pkg) return "Please choose a package.";
-    if (s === 3) {
+    if (s === 1 && !tuition && !audience) return "Please choose Children Grooming or Parent Grooming.";
+    if (s === 2 && !classType) return "Please choose a class type.";
+    if (s === 3 && !pkg) return "Please choose a package.";
+    if (s === 4 && !forParent) {
       if (!ageOk) return "Please enter the student's age (3 to 19).";
       if (!tuition && !ageGroupId) return eligible.length ? "Please choose an age group." : "Character Grooming is for ages 5 to 15. Please message us on WhatsApp for other ages.";
       if (tuition && (!grade || !subjectChoice)) return "Please select the school grade and choose All subjects or Compulsory subjects.";
     }
-    if (s === 4) {
+    if (s === 5) {
       if (f.parent_name.trim().length < 2) return "Please enter the parent's full name.";
       if (!/^(\+?92|0)?3\d{9}$/.test(f.whatsapp.replace(/[\s-]/g, ""))) return "Please enter a valid WhatsApp number, e.g. 0333 1234567.";
       if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) return "That email address does not look right.";
       if (f.city.trim().length < 2) return "Please enter your city.";
-      if (!f.student_first_name.trim()) return "Please enter the student's first name.";
+      if (!forParent && !f.student_first_name.trim()) return "Please enter the student's first name.";
       if (!f.consent) return "Please tick the parent consent box.";
     }
     return "";
   }
-  function next() { const m = validate(step); if (m) return setErr(m); go(step + 1); }
+  function next() { const m = validate(step); if (m) return setErr(m); go(nextVisible(step, programId, audience, classType)); }
 
   async function submit() {
-    for (const s of [0, 1, 2, 3, 4]) { const m = validate(s); if (m) { setErr(m); setStep(s); return; } }
+    for (const s of [0, 1, 2, 3, 4, 5]) { const m = validate(s); if (m) { setErr(m); setStep(s); return; } }
     if (!pkg) return;
     setBusy(true); setErr("");
     const batchId = f.timing.startsWith("batch:") ? f.timing.slice(6) : "";
@@ -149,8 +184,10 @@ export default function EnrollWizard(p: Props) {
       body: JSON.stringify({
         package_id: pkg.id, expected_amount: totalPayable(pkg),
         parent_name: f.parent_name, whatsapp: f.whatsapp, email: f.email, city: f.city,
-        student_first_name: f.student_first_name, student_age: ageNum,
-        age_group_id: tuition ? "" : ageGroupId, school_grade: tuition ? grade : "", subject_choice: tuition ? subjectChoice : "",
+        // Parent Grooming: the parent is the learner, so their own name is the student name and there is no child age.
+        student_first_name: forParent ? f.parent_name.trim().slice(0, 50) : f.student_first_name, student_age: forParent ? "" : ageNum,
+        audience: tuition ? "" : audience,
+        age_group_id: tuition || forParent ? "" : ageGroupId, school_grade: tuition ? grade : "", subject_choice: tuition ? subjectChoice : "",
         preferred_timing: timingText, preferred_batch_id: batchId, consent: f.consent, website: f.website,
         source: currentSource(), utm: Object.fromEntries(Object.entries(camp).filter(([, v]) => v)), session_id: sessionId(),
         ...metaBrowserIds(),
@@ -170,12 +207,12 @@ export default function EnrollWizard(p: Props) {
   const tag = (t: string, tone: "gold" | "red" | "green" = "gold") =>
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${tone === "gold" ? "bg-gold text-navy" : tone === "red" ? "bg-red-100 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{t}</span>;
 
-  // Progress shows only the steps the parent will actually see: "Class type" and "Package" are
-  // skipped automatically when there is just one choice (today: Group only, Monthly only).
+  // Progress shows only the steps the parent will actually see: steps with just one possible answer are skipped.
   const progs = programId ? [programId] : p.programs.map((x) => x.id);
-  const skipType = progs.every((id) => typesFor(id).length <= 1);
-  const skipPkg = progs.every((id) => typesFor(id).every((t) => plan(p.packages, id, t).length <= 1));
-  const shown = STEPS.map((label, i) => ({ label, i })).filter(({ i }) => !(i === 1 && skipType) && !(i === 2 && skipPkg));
+  const shown = STEPS.map((label, i) => ({ label, i })).filter(({ i }) => progs.some((id) => {
+    if (i === 3) return typesFor(id).some((t) => (!classType || t === classType) && plan(p.packages, id, t).length > 1);
+    return visible(i, id, id === programId ? audience : "", classType);
+  }));
   const pos = Math.max(0, shown.filter(({ i }) => i <= step).length - 1);
 
   return (
@@ -195,14 +232,14 @@ export default function EnrollWizard(p: Props) {
       {pkg && step > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-navy px-4 py-3 text-white">
           <div className="min-w-0 text-sm">
-            <p className="truncate font-semibold">{program?.name} · {classType ? CLASS_TYPE_LABEL[classType] : ""}</p>
+            <p className="truncate font-semibold">{program?.name}{audience && !tuition ? ` · ${AUDIENCE_LABEL[audience]}` : ""} · {classType ? CLASS_TYPE_LABEL[classType] : ""}</p>
             <p className="text-white/70">{pkg.label}{group ? ` · ${group.label}` : ""}</p>
           </div>
           <p className="shrink-0 text-lg font-extrabold text-gold">{formatPKR(totalPayable(pkg))}</p>
         </div>
       )}
 
-      <div className="mt-5 rounded-3xl bg-white p-5 shadow-sm md:p-7" onFocusCapture={() => step >= 3 && touched()}>
+      <div className="mt-5 rounded-3xl bg-white p-5 shadow-sm md:p-7" onFocusCapture={() => step >= 4 && touched()}>
         {/* STEP 0 — service */}
         {step === 0 && (
           <div>
@@ -225,8 +262,26 @@ export default function EnrollWizard(p: Props) {
           </div>
         )}
 
-        {/* STEP 1 — class type */}
-        {step === 1 && program && (
+        {/* STEP 1 — who is it for (Character Grooming) */}
+        {step === 1 && program && !tuition && (
+          <div>
+            <h2 className="text-2xl font-bold text-navy">Who is it for?</h2>
+            <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Who is it for">
+              {AUDIENCES.map(([key, title, note]) => (
+                <button key={key} type="button" role="radio" aria-checked={audience === key} onClick={() => chooseAudience(key)} className={card(audience === key)}>
+                  <span className="flex items-center gap-2">
+                    {key === "children" ? <Baby size={20} className="text-emerald-700" /> : <HeartHandshake size={20} className="text-emerald-700" />}
+                    <span className="text-lg font-bold text-navy">{title}</span>
+                  </span>
+                  <span className="mt-1 block text-sm text-slate-600">{note}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 — class type */}
+        {step === 2 && program && (
           <div>
             <h2 className="text-2xl font-bold text-navy">Group or private?</h2>
             <div className="mt-5 grid gap-3">
@@ -250,8 +305,8 @@ export default function EnrollWizard(p: Props) {
           </div>
         )}
 
-        {/* STEP 2 — package */}
-        {step === 2 && program && classType && (
+        {/* STEP 3 — package */}
+        {step === 3 && program && classType && (
           <div>
             <h2 className="text-2xl font-bold text-navy">{tuition ? "Your package" : "Choose a plan"}</h2>
             <p className="mt-1 text-slate-600">{tuition ? "12 live sessions per month." : "Pay monthly, or pay ahead and save."}</p>
@@ -267,7 +322,10 @@ export default function EnrollWizard(p: Props) {
                         <span className="font-bold text-navy">{o.label}{monthly && !tuition ? " (standard)" : ""}</span>
                         {sv > 0 && tag(`Save ${formatPKR(sv)}`, "green")}
                       </span>
-                      <span className={`font-extrabold text-navy ${monthly ? "text-2xl" : "text-xl"}`}>{formatPKR(o.price_pkr)}</span>
+                      <span className="text-right">
+                        {sv > 0 && <span className="block text-sm text-slate-400 line-through">{formatPKR(o.price_pkr + sv)}</span>}
+                        <span className={`font-extrabold text-navy ${monthly ? "text-2xl" : "text-xl"}`}>{formatPKR(o.price_pkr)}</span>
+                      </span>
                     </span>
                     <span className="mt-1 block pl-7 text-sm text-slate-600">
                       {o.months > 1 ? `${formatPKR(perMonth(o))} per month · pay once for ${o.months} months` : tuition ? `${o.sessions ?? 12} sessions · pay once` : "Pay month by month"}
@@ -279,8 +337,8 @@ export default function EnrollWizard(p: Props) {
           </div>
         )}
 
-        {/* STEP 3 — student */}
-        {step === 3 && program && (
+        {/* STEP 4 — student (skipped for Parent Grooming) */}
+        {step === 4 && program && !forParent && (
           <div>
             <h2 className="text-2xl font-bold text-navy">How old is your child?</h2>
             <div className="mt-4 max-w-[12rem]">
@@ -341,15 +399,15 @@ export default function EnrollWizard(p: Props) {
           </div>
         )}
 
-        {/* STEP 4 — details */}
-        {step === 4 && (
+        {/* STEP 5 — details */}
+        {step === 5 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-navy">Your details</h2>
             <div><label className="label" htmlFor="pn">Your name</label><input id="pn" className="input" autoComplete="name" value={f.parent_name} onChange={(e) => set("parent_name", e.target.value)} /></div>
             <div><label className="label" htmlFor="wa">WhatsApp number</label><input id="wa" className="input" inputMode="tel" autoComplete="tel" placeholder="0333 1234567" value={f.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} /><p className="mt-1 text-xs text-slate-500">We send class details here.</p></div>
             <div><label className="label" htmlFor="em">Email (optional)</label><input id="em" type="email" className="input" autoComplete="email" value={f.email} onChange={(e) => set("email", e.target.value)} /></div>
             <div><label className="label" htmlFor="ct">City</label><input id="ct" className="input" autoComplete="address-level2" value={f.city} onChange={(e) => set("city", e.target.value)} /></div>
-            <div><label className="label" htmlFor="sn">Child's first name</label><input id="sn" className="input" value={f.student_first_name} onChange={(e) => set("student_first_name", e.target.value)} /></div>
+            {!forParent && <div><label className="label" htmlFor="sn">Child's first name</label><input id="sn" className="input" value={f.student_first_name} onChange={(e) => set("student_first_name", e.target.value)} /></div>}
             <div>
               <label className="label" htmlFor="tm">Preferred time</label>
               <select id="tm" className="input" value={f.timing} onChange={(e) => set("timing", e.target.value)}>
@@ -369,15 +427,17 @@ export default function EnrollWizard(p: Props) {
           </div>
         )}
 
-        {/* STEP 5 — review */}
-        {step === 5 && pkg && program && classType && (
+        {/* STEP 6 — review */}
+        {step === REVIEW && pkg && program && classType && (
           <div>
             <h2 className="text-2xl font-bold text-navy">Check and confirm</h2>
             <dl className="mt-4 divide-y divide-slate-100 rounded-2xl border border-slate-200 text-sm">
               {([
-                ["Service", program.name], ["Class type", CLASS_TYPE_LABEL[classType]], ["Package", pkg.label],
-                ...(tuition ? [["School grade", grade], ["Subjects", SUBJECT_CHOICES.find(([k]) => k === subjectChoice)?.[1] ?? ""]] : [["Age group", group ? `${group.label} (ages ${group.min_age}–${group.max_age})` : ""]]),
-                ["Student", `${f.student_first_name}, age ${age}`], ["Parent", f.parent_name], ["WhatsApp", f.whatsapp], ["City", f.city],
+                ["Service", program.name], ...(audience && !tuition ? [["For", AUDIENCE_LABEL[audience]]] : []),
+                ["Class type", CLASS_TYPE_LABEL[classType]], ["Package", pkg.label],
+                ...(tuition ? [["School grade", grade], ["Subjects", SUBJECT_CHOICES.find(([k]) => k === subjectChoice)?.[1] ?? ""]]
+                  : forParent ? [] : [["Age group", group ? `${group.label} (ages ${group.min_age}–${group.max_age})` : ""]]),
+                ...(forParent ? [] : [["Student", `${f.student_first_name}, age ${age}`]]), ["Parent", f.parent_name], ["WhatsApp", f.whatsapp], ["City", f.city],
                 ["Preferred timing", f.timing.startsWith("batch:") ? (matchingBatches.find((b) => b.id === f.timing.slice(6))?.name ?? "") : f.timing || "No preference"],
               ] as string[][]).map(([k, v]) => <div key={k} className="flex justify-between gap-4 p-3"><dt className="text-slate-500">{k}</dt><dd className="text-right font-semibold text-navy">{v}</dd></div>)}
             </dl>
@@ -398,8 +458,8 @@ export default function EnrollWizard(p: Props) {
 
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
           {step > 0 ? <button type="button" onClick={back} className="btn border-2 border-slate-300 text-navy"><ChevronLeft size={18} className="mr-1" />Back</button> : <span />}
-          {step >= 2 && step < 5 && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
-          {step === 5 && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
+          {step >= 3 && step < REVIEW && <button type="button" onClick={next} className="btn-emerald">Continue</button>}
+          {step === REVIEW && <button type="button" disabled={busy} onClick={submit} className="btn-gold disabled:opacity-60">{busy ? "Please wait…" : "Continue to Payment"}</button>}
         </div>
       </div>
 

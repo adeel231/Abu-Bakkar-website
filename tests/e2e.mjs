@@ -17,8 +17,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const money = (n) => "Rs. " + n.toLocaleString("en-PK");
 
 const PACKAGES = [
-  { name: "Character · Group · Monthly", q: "program=character-grooming&type=group&term=monthly", price: 6000, age: 9 },
-  { name: "Character · Group · 3 Months", q: "program=character-grooming&type=group&term=3m", price: 16500, age: 6 },
+  { name: "Character · Group · Monthly", q: "program=character-grooming&for=children&type=group&term=monthly", price: 7000, age: 9 },
+  { name: "Character · Group · 3 Months", q: "program=character-grooming&for=children&type=group&term=3m", price: 15500, age: 6 },
   { name: "Character · Group · 6 Months", q: "program=character-grooming&type=group&term=6m", price: 30000, age: 13 },
   { name: "Character · Private · Monthly", q: "program=character-grooming&type=private&term=monthly", price: 13000, age: 10 },
   { name: "Character · Private · 3 Months", q: "program=character-grooming&type=private&term=3m", price: 36000, age: 14 },

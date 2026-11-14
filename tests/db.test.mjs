@@ -69,10 +69,27 @@ test("all package prices match the brief", async () => {
   const rows = await q(`select p.slug, k.class_type, k.duration_key, k.price_pkr, k.sessions from packages k
                         join programs p on p.id=k.program_id order by k.sort`);
   assert.deepEqual(rows.map((r) => [r.slug, r.class_type, r.duration_key, r.price_pkr, r.sessions]), [
-    ["character-grooming", "group", "monthly", 6000, null], ["character-grooming", "group", "3m", 16500, null],
+    ["character-grooming", "group", "monthly", 7000, null], ["character-grooming", "group", "3m", 15500, null],
     ["character-grooming", "group", "6m", 30000, null],     ["character-grooming", "private", "monthly", 13000, null],
     ["character-grooming", "private", "3m", 36000, null],   ["character-grooming", "private", "6m", 69000, null],
     ["academic-tuition", "group", "4w", 6000, 12],          ["academic-tuition", "private", "4w", 15999, 12]]);
+});
+
+test("CHARACTER GROOMING: package labels; Children Grooming needs an age group; Parent Grooming needs no child age", async () => {
+  const labels = await q(`select k.duration_key, k.label from packages k join programs p on p.id=k.program_id
+                          where p.slug='character-grooming' and k.class_type='group' order by k.months`);
+  assert.deepEqual(labels.map((r) => r.label), ["Monthly", "Basic Course · 3 Months", "Advanced Course · 6 Months"]);
+  const B = await ag("B"); const k = await pkg("character-grooming", "group", "3m");
+  const kid = await enroll({ package_id: k.id, audience: "children", age_group_id: B.id, student_age: 10, whatsapp: "923008880001", student_first_name: "Kiddo" });
+  const [ek] = await q("select audience, program_name, child_age, amount_pkr from enrollments where ref=$1", [kid.ref]);
+  assert.deepEqual(ek, { audience: "children", program_name: "Character Grooming · Children Grooming", child_age: 10, amount_pkr: 15500 });
+  await fails(() => enroll({ package_id: k.id, audience: "children", student_age: 10, whatsapp: "923008880002" }), "AGE_GROUP_REQUIRED");
+  const par = await enroll({ package_id: k.id, audience: "parent", student_age: "", age_group_id: null, whatsapp: "923008880003", student_first_name: "Ayesha" });
+  const [ep] = await q("select audience, program_name, child_age, age_group_id, amount_pkr from enrollments where ref=$1", [par.ref]);
+  assert.deepEqual(ep, { audience: "parent", program_name: "Character Grooming · Parent Grooming", child_age: null, age_group_id: null, amount_pkr: 15500 });
+  await fails(() => enroll({ package_id: k.id, audience: "teacher", whatsapp: "923008880004" }), "BAD_AUDIENCE");
+  const t = await pkg("academic-tuition", "group", "4w");
+  await fails(() => enroll({ package_id: t.id, audience: "parent", school_grade: "Grade 6", subject_choice: "all", whatsapp: "923008880005" }), "BAD_AUDIENCE");
 });
 
 test("age groups A/B/C exist", async () => {
@@ -103,19 +120,19 @@ test("every package: checkout stores exactly the package price (fee snapshot)", 
 test("checkout refuses if the displayed total no longer matches the real price", async () => {
   const B = await ag("B"); const k = await pkg("character-grooming", "group", "monthly");
   await fails(() => enroll({ package_id: k.id, age_group_id: B.id, expected_amount: 5999, whatsapp: "923007770099", student_first_name: "Stale" }), "PRICE_CHANGED");
-  const ok = await enroll({ package_id: k.id, age_group_id: B.id, expected_amount: 6000, whatsapp: "923007770099", student_first_name: "Fresh" });
-  assert.equal(ok.amount, 6000);
+  const ok = await enroll({ package_id: k.id, age_group_id: B.id, expected_amount: 7000, whatsapp: "923007770099", student_first_name: "Fresh" });
+  assert.equal(ok.amount, 7000);
 });
 
 test("price edits later do not change an existing enrollment's fee", async () => {
   const B = await ag("B"); const k = await pkg("character-grooming", "group", "monthly");
   const r = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923007770001", student_first_name: "Snap" });
-  await db.query("update packages set price_pkr=7000 where id=$1", [k.id]);
+  await db.query("update packages set price_pkr=8000 where id=$1", [k.id]);
   const [e] = await q("select amount_pkr from enrollments where ref=$1", [r.ref]);
-  assert.equal(e.amount_pkr, 6000);
+  assert.equal(e.amount_pkr, 7000);
   const r2 = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923007770002", student_first_name: "Snap2" });
-  assert.equal(r2.amount, 7000);                                   // new checkouts use the new price
-  await db.query("update packages set price_pkr=6000 where id=$1", [k.id]);
+  assert.equal(r2.amount, 8000);                                   // new checkouts use the new price
+  await db.query("update packages set price_pkr=7000 where id=$1", [k.id]);
   await fails(() => db.query("update enrollments set amount_pkr=1 where ref=$1", [r.ref]), "FEE_LOCKED");
 });
 
@@ -231,7 +248,7 @@ test("BATCHES: only verified students can be placed; capacity is enforced; refun
     const [e] = await q("select id from enrollments where ref=$1", [r.ref]);
     return { ...r, id: e.id };
   };
-  const pay = async (r) => { const s = (await q("select submit_payment($1,'Bank transfer',$2,null) as r", [r.ref, "CAP-TXN-" + r.ref])) [0].r; await q("select verify_payment($1,'a',6000)", [s.payment_id]); };
+  const pay = async (r) => { const s = (await q("select submit_payment($1,'Bank transfer',$2,null) as r", [r.ref, "CAP-TXN-" + r.ref])) [0].r; await q("select verify_payment($1,'a',7000)", [s.payment_id]); };
   const a = await mk(1), b = await mk(2), c = await mk(3);
   await fails(() => db.query("select assign_batch($1,$2)", [a.id, batch.id]), "NOT_ENROLLED");       // unpaid
   await db.query("update enrollments set class_batch_id=$2 where id=$1", [a.id, batch.id]);   // direct write for an unpaid student...
@@ -295,7 +312,7 @@ test("DELETE: unpaid enrollments can be deleted (with their payment and orphaned
   const p = await enroll({ package_id: k.id, age_group_id: B.id, whatsapp: "923002220023", student_first_name: "Paid1" });
   await q("select submit_payment($1,'JazzCash','PAID-DEL-0001',null,null)", [p.ref]);
   const pay = (await q("select id from payments where txn_ref='PAID-DEL-0001'"))[0];
-  await q("select verify_payment($1,'admin@test',6000)", [pay.id]);
+  await q("select verify_payment($1,'admin@test',7000)", [pay.id]);
   await fails(() => db.query("select delete_enrollment((select id from enrollments where ref=$1))", [p.ref]), "ENROLLMENT_PROTECTED");
   assert.equal((await q("select count(*)::int n from payments where id=$1", [pay.id]))[0].n, 1);      // still on record while verified
   await q("select refund_enrollment((select id from enrollments where ref=$1),'admin@test','test')", [p.ref]);

@@ -39,7 +39,8 @@ export function buildLiveFacts(c: Catalog, s: Record<string, string>): LiveFacts
     const g = plan(c.packages, cg.id, "group");
     const monthly = monthlyPackage(c.packages, cg.id, "group");
     lines.push("");
-    lines.push("CHARACTER GROOMING (live online classes for boys and girls aged 5 to 15). Only Online Group classes are offered.");
+    lines.push("CHARACTER GROOMING (live online classes). Only Online Group classes are offered.");
+    lines.push("It is offered as Children Grooming (boys and girls aged 5 to 15) and as Parent Grooming (for mothers and fathers). Both have the same plans and prices. The 3 month plan is the Basic Course and the 6 month plan is the Advanced Course.");
     for (const p of g) {
       const sv = monthly ? savings(p, monthly) : 0;
       lines.push(`- ${p.label}: ${rs(p.price_pkr)}${p.months > 1 ? ` (${rs(perMonth(p))} per month${sv > 0 ? ` and you save ${rs(sv)}` : ""})` : " per month"}. ${p.schedule_note}`.trim());

@@ -23,6 +23,6 @@ Parents 25–45 in Pakistan (Urdu + English), interests: parenting, Islamic educ
 PageView, ViewContent (landing), InitiateCheckout (form), AddPaymentInfo (payment page), Purchase (verified, value + PKR only).
 
 ## Advertised price
-Use **Rs. 6,000 per month** (Online Group Character Grooming) as the main advertised price. Link ads to the homepage with UTM tags, e.g.
+Use **Rs. 7,000 per month** (Online Group Character Grooming) as the main advertised price. Link ads to the homepage with UTM tags, e.g.
 `https://www.abubakkaracademy.com/?utm_source=facebook&utm_medium=paid&utm_campaign=emotional`
 Show "Limited Seats Available" in an ad only when the website shows it (it appears automatically from real batch capacity).

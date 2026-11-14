@@ -5,6 +5,7 @@ const MESSAGES: Record<string, string> = {
   PRICE_CHANGED: "The price of this package was just updated. We have refreshed it — please review the new total and continue.",
   PROGRAM_UNAVAILABLE: "This program is not open for enrollment right now.",
   BAD_AGE: "Please enter a valid student age.",
+  BAD_AUDIENCE: "Please choose Children Grooming or Parent Grooming.",
   MISSING_DETAILS: "Please fill in all required details.",
   AGE_GROUP_REQUIRED: "Please choose an age group.",
   AGE_GROUP_MISMATCH: "The student's age does not fit the selected age group. Please pick the group that matches the age.",

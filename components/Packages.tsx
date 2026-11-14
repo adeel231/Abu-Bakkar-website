@@ -40,7 +40,7 @@ export function CharacterPackages({ c, wa }: { c: Catalog; wa: string }) {
   return (
     <section id="packages" className="relative bg-white text-navy">
       <ShareButton id="packages" corner="top-right" title="Character Grooming packages"
-        text={`Online Group classes from ${formatPKR(monthlyPackage(c.packages, prog.id, "group")?.price_pkr ?? 6000).replace(/,/g, "")} per month.`} />
+        text={`Online Group classes from ${formatPKR(monthlyPackage(c.packages, prog.id, "group")?.price_pkr ?? 7000).replace(/,/g, "")} per month.`} />
       <div className="section">
         <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-gold">Character Grooming</p>
         <h2 className="h2 mt-2 text-center">Choose Your Package</h2>
