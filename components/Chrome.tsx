@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { EnrollLink, track } from "./Tracker";
 import { Logo } from "./Brand";
 
-const NAV = [["#packages", "Packages"], ["#play", "Play"], ["#journey", "How It Works"], ["#faq", "FAQs"]];
+// Full paths ("/#play", not "#play") so the menu also works on other pages such as /services.
+const NAV = [["/#play", "Play"], ["/#journey", "How It Works"], ["/#faq", "FAQs"]];
+// The "Our Services" drop-down menu.
+const SERVICES = [["/services/quran", "Online Quran Classes"], ["/services/academic-tutoring", "Academic Tutoring"]];
 const wa = WHATSAPP;
 
 const PHONE = "03335767202";
@@ -33,6 +36,18 @@ export function Header({ href }: { href: string }) {
       <div className="mx-auto flex w-full items-center justify-between px-5 py-1 md:px-6">
         <Logo />
         <nav className="hidden items-center gap-4 text-sm font-medium text-navy md:flex lg:gap-7 lg:text-base">
+          {/* Our Services: opens on hover or keyboard focus */}
+          <div className="group relative">
+            <a href="/services" aria-haspopup="true" className="inline-flex items-center gap-1 transition-colors hover:text-emerald-700">
+              Our Services
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="transition group-hover:rotate-180"><path d="M6 9l6 6 6-6" /></svg>
+            </a>
+            <div className="invisible absolute left-1/2 top-full z-50 w-64 -translate-x-1/2 pt-3 opacity-0 transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl">
+                {SERVICES.map(([h, l]) => <a key={h} href={h} className="block px-5 py-3 font-semibold text-navy hover:bg-emerald-50 hover:text-emerald-700">{l}</a>)}
+              </div>
+            </div>
+          </div>
           {NAV.map(([h, l]) => <a key={h} href={h} className="transition-colors hover:text-emerald-700">{l}</a>)}
           <EnrollLink href={href} className="btn-gold !px-5 !py-2.5 text-sm lg:!px-6 lg:text-[15px]">Enroll Now</EnrollLink>
         </nav>
@@ -42,6 +57,8 @@ export function Header({ href }: { href: string }) {
       </div>
       {open && (
         <nav className="space-y-1 border-t border-slate-200 px-5 pb-4 md:hidden">
+          <a href="/services" onClick={() => setOpen(false)} className="block py-2.5 text-base font-medium text-navy">Our Services</a>
+          {SERVICES.map(([h, l]) => <a key={h} href={h} onClick={() => setOpen(false)} className="block border-l-2 border-emerald/40 py-2 pl-4 text-base text-slate-600">{l}</a>)}
           {NAV.map(([h, l]) => <a key={h} href={h} onClick={() => setOpen(false)} className="block py-2.5 text-base font-medium text-navy">{l}</a>)}
         </nav>
       )}

@@ -5,12 +5,11 @@ import ParentPromise from "@/components/ParentPromise";
 import HeroBand from "@/components/HeroBand";
 import ShareButton from "@/components/ShareButton";
 import QuizSection from "@/components/QuizSection";
-import { AgeGroups, CharacterPackages } from "@/components/Packages";
+import { AgeGroups } from "@/components/Packages";
 import { AnnouncementBar, FloatingBar, Header } from "@/components/Chrome";
 import { anyLimited, getCatalog, getPromiseCount, getSettings } from "@/lib/db";
 import { formatPKR, monthlyPackage } from "@/lib/pricing";
 import { buildFaq } from "@/lib/faq";
-import { WHATSAPP } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
 
@@ -105,20 +104,11 @@ export default async function Home() {
                 <p key={t} className="flex items-center gap-3 py-2.5 font-medium lg:gap-[1vw] lg:py-[0.62vw] lg:text-[1.4vw]"><Icon className="h-5 w-5 shrink-0 text-[#0b5a3e] lg:h-[1.7vw] lg:w-[1.7vw]" />{t}</p>
               ))}
             </div>
-            {/* Monthly price seal */}
-            <div className="flex h-40 w-40 shrink-0 flex-col items-center justify-center rounded-full border-[3px] border-white/80 bg-gold text-center text-navy shadow-xl lg:h-[14.4vw] lg:w-[14.4vw]">
-              <span className="text-sm font-semibold leading-tight lg:text-[1.4vw]">Online Group<br />Classes</span>
-              <span className="mt-1 whitespace-nowrap font-sans text-2xl font-extrabold lg:mt-[0.5vw] lg:text-[2.4vw]">{price}</span>
-              <span className="text-sm font-semibold lg:text-[1.2vw]">per month</span>
-            </div>
           </div>
 
-          <EnrollLink href="#packages" className="btn-gold mt-8 w-fit !px-7 !py-3 text-base lg:mt-[2vw] lg:!px-[2.2vw] lg:!py-[0.9vw] lg:text-[1.15vw]">Choose Your Package</EnrollLink>
+          <EnrollLink href={enrollHref} className="btn-gold mt-8 w-fit !px-7 !py-3 text-base lg:mt-[2vw] lg:!px-[2.2vw] lg:!py-[0.9vw] lg:text-[1.15vw]">Enroll Now</EnrollLink>
         </div>
       </section>
-
-      {/* 4. PACKAGES + AGE GROUPS (primary service) */}
-      <CharacterPackages c={c} wa={WHATSAPP} />
 
       {/* Interactive game */}
       <QuizSection price={price} schedule={cg ? monthlyPackage(c.packages, cg.id, "group")?.schedule_note ?? "" : ""} />

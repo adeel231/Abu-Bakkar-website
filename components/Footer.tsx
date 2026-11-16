@@ -4,7 +4,7 @@ import { WHATSAPP, WHATSAPP_PRETTY } from "@/lib/contact";
 import { Facebook, Instagram } from "lucide-react";
 
 const COLS: { title: string; links: [string, string][] }[] = [
-  { title: "Programs", links: [["Character Grooming", "/#programs"], ["Academic Tuition", "/#programs"], ["Enroll Now", "/enroll"]] },
+  { title: "Programs", links: [["Character Grooming", "/#programs"], ["Quran Classes", "/services/quran"], ["Academic Tutoring", "/services/academic-tutoring"], ["Enroll Now", "/enroll"]] },
   { title: "Academy", links: [["Character Development", "/#qualities"], ["The Parent Promise", "/#promise"], ["How It Works", "/#journey"]] },
   { title: "Support", links: [["FAQs", "/#faq"], ["Privacy Policy", "/privacy"], ["Refund Policy", "/refund-policy"], ["Terms of Enrollment", "/terms"]] },
 ];
