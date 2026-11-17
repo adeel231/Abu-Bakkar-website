@@ -7,7 +7,7 @@ import { Logo } from "./Brand";
 // Full paths ("/#play", not "#play") so the menu also works on other pages such as /services.
 const NAV = [["/#play", "Play"], ["/#journey", "How It Works"], ["/#faq", "FAQs"]];
 // The "Our Services" drop-down menu.
-const SERVICES = [["/services/quran", "Online Quran Classes"], ["/services/academic-tutoring", "Academic Tutoring"]];
+const SERVICES = [["/quran", "Online Quran Classes"], ["/services/academic-tutoring", "Academic Tutoring"]];
 const wa = WHATSAPP;
 
 const PHONE = "03335767202";

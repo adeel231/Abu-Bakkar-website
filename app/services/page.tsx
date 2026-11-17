@@ -8,8 +8,8 @@ export const metadata = {
 };
 
 const SERVICES: [string, LucideIcon, string, string, string[]][] = [
-  ["/services/quran", BookOpen, "Online Quran Classes", "Read, recite, memorize and understand the Quran with caring teachers.",
-    ["Nazra Quran", "Tajweed", "Qirat", "Hifz-ul-Quran", "Quranic Arabic", "Tafseer"]],
+  ["/quran", BookOpen, "Online Quran Classes", "Live one-to-one Quran lessons with qualified male and female teachers.",
+    ["Noorani Qaida", "Nazra", "Tajweed", "Hifz"]],
   ["/services/academic-tutoring", GraduationCap, "Academic Tutoring", "Live online tuition for school subjects from Grade 1 to Grade 10.",
     ["Mathematics", "English", "Urdu", "Science", "Islamiyat", "Computer Science"]],
 ];

@@ -440,6 +440,38 @@ Also asked as: "number do" · "kisi se baat karni hai"
 
 ---
 
+## 16. Online Quran Classes (UK and USA)
+
+**Q108. Do you teach the Quran online?**
+Also asked as: "quran classes" · "quran teacher online" · "noorani qaida"
+**Answer:** Yes. We offer live one-to-one online Quran lessons for children and adults: Noorani Qaida and Nazra and Tajweed. Hifz places depend on specialist teacher availability. See abubakkaracademy.com/quran ✅
+
+**Q109. How much are the Quran classes?**
+**Answer:** Prices are monthly. UK: Starter 8 sessions of 30 minutes £35 and Standard 12 sessions £45 and Intensive 20 sessions £69. USA: Starter $49 and Standard $65 and Intensive $99. These are launch prices. Pakistani Character Grooming and Tuition fees are in Rs and are separate. ✅
+
+**Q110. Is there a free trial?**
+**Answer:** Yes. The first Quran assessment of 20 to 30 minutes is free and needs no card details. Book it at abubakkaracademy.com/quran/book-trial ✅
+
+**Q111. Are the lessons one-to-one? Who are the teachers?**
+**Answer:** Yes every Quran lesson is live and one-to-one over video. Teachers teach online from Pakistan. Male and female teachers are available subject to availability and we confirm before you pay. Teacher profiles are shown only after verification. ✅
+
+**Q112. Can I choose a female teacher?**
+**Answer:** Yes. Ask for a female teacher (Qaria) on the booking form. We confirm availability for your preferred time before you pay. ✅
+
+**Q113. What time zone are the lessons in?**
+**Answer:** UK families get lesson times in UK time (GMT or BST). USA families get times in their own time zone. We only offer times a teacher can really deliver. ✅
+
+**Q114. Is there a sibling discount? Is there a registration fee?**
+**Answer:** Yes 10% off for each additional sibling. There is no registration fee. ✅
+
+**Q115. How do I pay for the Quran classes? Can I use a card?**
+**Answer:** Booking the free assessment needs no payment. International card payment for the monthly plans is not open yet so the team will confirm the payment steps after your assessment on WhatsApp. Never share card details in the chat. ✅
+
+**Q116. Can I enroll my child in Quran classes on the Pakistan enrollment form?**
+**Answer:** No. The Quran classes have their own booking form at abubakkaracademy.com/quran/book-trial. The Pakistan enrollment form is for Character Grooming and Academic Tuition. ✅
+
+---
+
 ## Checklist: what you need to answer (⚠️ items)
 
 | # | Question | What the bot needs from you |

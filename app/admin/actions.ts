@@ -231,3 +231,26 @@ export async function changePassword(fd: FormData) {
   await c.from("admin_users").update({ password_hash: hashPassword(next) }).eq("id", me.id);
   back("/admin/settings", "msg", "Password changed.");
 }
+
+// ---------------------------------------------------------------------------------------------------- Quran leads
+const QURAN_STATUSES = ["new_inquiry", "trial_booked", "trial_attended", "package_recommended", "payment_pending", "paying_student", "retained", "cancelled"];
+/** Move a Quran lead along the funnel and keep the conversion dates. */
+export async function updateQuranLead(fd: FormData) {
+  await requireAdmin();
+  const id = str(fd, "id"), status = str(fd, "status");
+  if (!uuid(id) || !QURAN_STATUSES.includes(status)) back("/admin/quran-leads", "err", "Invalid lead.");
+  const now = new Date().toISOString();
+  const trial = str(fd, "trial_at");
+  const patch: Record<string, unknown> = {
+    status, recommended_level: str(fd, "recommended_level") || null, recommended_plan: str(fd, "recommended_plan") || null,
+    admin_notes: str(fd, "admin_notes") || null, trial_at: trial ? new Date(trial + "Z").toISOString() : null,
+  };
+  const { data: cur } = await db().from("quran_leads").select("trial_booked_at,trial_attended_at,paid_at").eq("id", id).maybeSingle();
+  if (status === "trial_booked" && !cur?.trial_booked_at) patch.trial_booked_at = now;
+  if (status === "trial_attended" && !cur?.trial_attended_at) patch.trial_attended_at = now;
+  if (status === "paying_student" && !cur?.paid_at) patch.paid_at = now;
+  const { error } = await db().from("quran_leads").update(patch).eq("id", id);
+  if (error) back("/admin/quran-leads", "err", "Could not save the lead.");
+  revalidatePath("/admin/quran-leads");
+  back("/admin/quran-leads", "msg", "Lead updated.");
+}

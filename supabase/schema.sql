@@ -619,3 +619,25 @@ update packages set price_pkr = 15500, label = 'Basic Course · 3 Months'
 update packages set label = 'Advanced Course · 6 Months'
  where class_type = 'group' and duration_key = '6m' and label = '6 Months'
    and program_id = (select id from programs where slug = 'character-grooming');
+
+-- INTERNATIONAL QURAN LEADS (free assessment bookings). Safe to re-run.
+create table if not exists quran_leads (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  status text not null default 'new_inquiry' check (status in ('new_inquiry','trial_booked','trial_attended','package_recommended','payment_pending','paying_student','retained','cancelled')),
+  parent_name text not null, email text not null, whatsapp text not null,
+  country text not null, time_zone text not null,
+  student_name text not null, age_band text not null, level text not null,
+  teacher_pref text not null default 'No preference',
+  preferred_time text not null,
+  consent_at timestamptz not null,
+  landing_page text, source text, utm jsonb, selected_plan text,
+  trial_at timestamptz, recommended_level text, recommended_plan text,
+  trial_booked_at timestamptz, trial_attended_at timestamptz, paid_at timestamptz,
+  admin_notes text
+);
+create index if not exists quran_leads_status_idx on quran_leads(status, created_at desc);
+alter table quran_leads enable row level security;   -- only the server (service role) reads or writes
+
+-- Parent reminder sent for the booked trial (set by the daily cron).
+alter table quran_leads add column if not exists reminded_at timestamptz;

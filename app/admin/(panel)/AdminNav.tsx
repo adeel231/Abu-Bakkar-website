@@ -8,6 +8,7 @@ const NAV: [string, string, LucideIcon][] = [
   ["/admin", "Overview", LayoutDashboard],
   ["/admin/payments", "Payments", CreditCard],
   ["/admin/enrollments", "Enrollments", BookOpen],
+  ["/admin/quran-leads", "Quran Leads", BookOpen],
   ["/admin/people", "Parents & Students", Users],
   ["/admin/batches", "Class Batches", CalendarClock],
   ["/admin/packages", "Packages & Pricing", Tags],
