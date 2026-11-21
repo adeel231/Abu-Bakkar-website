@@ -7,12 +7,12 @@ export const REGIONS: Record<Region, { label: string; currency: string; symbol: 
   us: { label: "United States", currency: "USD", symbol: "$", path: "/quran/usa", hreflang: "en-US", zoneNote: "Lesson times are confirmed in your own US time zone when we book your assessment." },
 };
 
-export type Plan = { key: string; name: string; sessions: number; minutes: number; price: Record<Region, number>; recommended?: boolean; hifz?: boolean };
+export type Plan = { key: string; name: string; sessions: number /* per week */; minutes: number; price: Record<Region, number>; recommended?: boolean; hifz?: boolean };
 export const PLANS: Plan[] = [
-  { key: "starter", name: "Starter", sessions: 8, minutes: 30, price: { uk: 35, us: 49 } },
-  { key: "standard", name: "Standard", sessions: 12, minutes: 30, price: { uk: 45, us: 65 }, recommended: true },
-  { key: "intensive", name: "Intensive", sessions: 20, minutes: 30, price: { uk: 69, us: 99 } },
-  { key: "hifz", name: "Hifz Intensive", sessions: 20, minutes: 45, price: { uk: 89, us: 129 }, hifz: true },
+  { key: "starter", name: "Starter", sessions: 2, minutes: 30, price: { uk: 35, us: 49 } },
+  { key: "standard", name: "Standard", sessions: 3, minutes: 30, price: { uk: 45, us: 65 }, recommended: true },
+  { key: "intensive", name: "Intensive", sessions: 5, minutes: 30, price: { uk: 69, us: 99 } },
+  { key: "hifz", name: "Hifz Intensive", sessions: 5, minutes: 45, price: { uk: 89, us: 129 }, hifz: true },
 ];
 /** Brief rule 10: show Hifz pricing only once qualified specialist teachers are available. Set NEXT_PUBLIC_QURAN_HIFZ_LIVE=true to show it. */
 export const HIFZ_LIVE = process.env.NEXT_PUBLIC_QURAN_HIFZ_LIVE === "true";

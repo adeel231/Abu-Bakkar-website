@@ -49,7 +49,7 @@ export function Hero({ h1, sub, region, photo = true }: { h1: string; sub: strin
 export const StatsStrip = () => (
   <section className="bg-navy text-white">
     <ul className="mx-auto grid max-w-6xl grid-cols-2 divide-white/10 px-5 py-8 md:grid-cols-4 md:divide-x">
-      {[["1 : 1", "Live lessons, never groups"], ["Free", "First assessment, no card"], ["8 – 20", "Sessions per month, by plan"], ["Monthly", "Written progress report"]].map(([a, b]) => (
+      {[["1 : 1", "Live lessons, never groups"], ["Free", "First assessment, no card"], ["2 – 5", "Sessions per week, by plan"], ["Monthly", "Written progress report"]].map(([a, b]) => (
         <li key={a} className="px-4 py-3 text-center"><p className="font-serif text-3xl font-bold text-gold md:text-4xl">{a}</p><p className="mt-1 text-base text-white">{b}</p></li>))}
     </ul>
   </section>
@@ -141,7 +141,7 @@ export const ReportSection = () => (
   </section>
 );
 
-const NOTES = ["Billed monthly. Full amount and currency shown before you pay", "Free assessment, no registration fee", "10% off each extra sibling", "Sessions are a monthly allowance, also in five-week months", "Launch prices, subject to approval"];
+const NOTES = ["Billed monthly. Full amount and currency shown before you pay", "Free assessment, no registration fee", "10% off each extra sibling", "Weekly sessions, billed monthly", "Launch prices, subject to approval"];
 
 /** Prices for one region. Hifz is hidden until HIFZ_LIVE. */
 export function PricingTable({ region }: { region: Region }) {
@@ -155,13 +155,13 @@ export function PricingTable({ region }: { region: Region }) {
             <h3 className="font-serif text-2xl font-bold">{p.name}</h3>
             <p className="mt-4 flex items-end gap-1"><span className="font-serif text-5xl font-bold">{money(region, p.price[region])}</span><span className={`pb-2 text-sm ${p.recommended ? "text-white" : "text-slate-700"}`}>/ month · {r.currency}</span></p>
             <ul className={`mt-6 space-y-3 border-t pt-6 text-base ${p.recommended ? "border-white/20" : "border-slate-100"}`}>
-              {[`${p.sessions} one-to-one sessions per month`, `${p.minutes} minutes per session`, "Monthly progress report", "Free assessment first"].map((t) => <li key={t} className="flex gap-3"><Check size={18} className={`mt-1 shrink-0 ${p.recommended ? "text-gold" : "text-[#0b5a3e]"}`} />{t}</li>)}
+              {[`${p.sessions} one-to-one sessions per week`, `${p.minutes} minutes per session`, "Monthly progress report", "Free assessment first"].map((t) => <li key={t} className="flex gap-3"><Check size={18} className={`mt-1 shrink-0 ${p.recommended ? "text-gold" : "text-[#0b5a3e]"}`} />{t}</li>)}
             </ul>
             <Link href={`/quran/book-trial?region=${region}&plan=${p.key}`} className={`mt-8 inline-flex justify-center rounded-full px-5 py-3.5 text-center font-bold transition ${p.recommended ? "bg-gold text-navy hover:brightness-105" : "bg-navy text-white hover:bg-[#12305a]"}`}>Start with a free assessment</Link>
           </div>
         ))}
       </div>
-      <div className="marquee mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 text-navy" aria-label="Billed monthly. Full amount and currency shown before you pay. Free assessment, no registration fee, 10% off each extra sibling. Sessions are a monthly allowance, also in five-week months. Launch prices, subject to approval.">
+      <div className="marquee mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 text-navy" aria-label="Billed monthly. Full amount and currency shown before you pay. Free assessment, no registration fee, 10% off each extra sibling. Weekly sessions, billed monthly. Launch prices, subject to approval.">
         <div className="marquee-track flex w-max" style={{ animationDuration: "90s" }} aria-hidden="true">
           {[0, 1].map((half) => (
             <ul key={half} className="flex shrink-0">

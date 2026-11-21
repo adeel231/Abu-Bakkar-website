@@ -58,7 +58,7 @@ export function buildLiveFacts(c: Catalog, s: Record<string, string>): LiveFacts
   lines.push("");
   lines.push("ONLINE QURAN CLASSES (international service for the UK and USA, separate from the Pakistan programs). Live one-to-one lessons: Noorani Qaida and Nazra and Tajweed" + (HIFZ_LIVE ? " and Hifz." : ". Hifz depends on specialist teacher availability."));
   lines.push("Free first assessment of 20 to 30 minutes with no card. Teachers teach online from Pakistan. Male and female teachers subject to availability. 10% off each extra sibling. No registration fee. Booking page: https://www.abubakkaracademy.com/quran/book-trial and details: https://www.abubakkaracademy.com/quran");
-  for (const q of PLANS.filter((x) => !x.hifz || HIFZ_LIVE)) lines.push(`- ${q.name}: ${q.sessions} sessions of ${q.minutes} minutes per month. UK £${q.price.uk} per month. USA $${q.price.us} per month.`);
+  for (const q of PLANS.filter((x) => !x.hifz || HIFZ_LIVE)) lines.push(`- ${q.name}: ${q.sessions} sessions per week of ${q.minutes} minutes. Billed monthly. UK £${q.price.uk} per month. USA $${q.price.us} per month.`);
   lines.push("These are launch prices. Online card payment for Quran plans is not open yet: the team confirms payment on WhatsApp after the assessment. Quran classes are NOT booked on the Pakistan enrollment form.");
 
   if (c.ageGroups.length) {

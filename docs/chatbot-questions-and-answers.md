@@ -447,7 +447,7 @@ Also asked as: "quran classes" · "quran teacher online" · "noorani qaida"
 **Answer:** Yes. We offer live one-to-one online Quran lessons for children and adults: Noorani Qaida and Nazra and Tajweed. Hifz places depend on specialist teacher availability. See abubakkaracademy.com/quran ✅
 
 **Q109. How much are the Quran classes?**
-**Answer:** Prices are monthly. UK: Starter 8 sessions of 30 minutes £35 and Standard 12 sessions £45 and Intensive 20 sessions £69. USA: Starter $49 and Standard $65 and Intensive $99. These are launch prices. Pakistani Character Grooming and Tuition fees are in Rs and are separate. ✅
+**Answer:** Billed monthly. UK: Starter 2 sessions a week of 30 minutes £35 and Standard 3 sessions a week £45 and Intensive 5 sessions a week £69. USA: Starter $49 and Standard $65 and Intensive $99. These are launch prices. Pakistani Character Grooming and Tuition fees are in Rs and are separate. ✅
 
 **Q110. Is there a free trial?**
 **Answer:** Yes. The first Quran assessment of 20 to 30 minutes is free and needs no card details. Book it at abubakkaracademy.com/quran/book-trial ✅
