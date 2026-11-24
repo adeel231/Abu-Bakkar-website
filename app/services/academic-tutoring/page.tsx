@@ -7,6 +7,7 @@ import { getCatalog } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Academic Tutoring — Abu Bakkar Academy",
+  alternates: { canonical: "/services/academic-tutoring" },
   description: "Live online tuition for school subjects from Grade 1 to Grade 10 at Abu Bakkar Academy.",
 };
 

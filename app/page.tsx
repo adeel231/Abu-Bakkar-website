@@ -12,6 +12,7 @@ import { formatPKR, monthlyPackage } from "@/lib/pricing";
 import { buildFaq } from "@/lib/faq";
 
 export const dynamic = "force-dynamic";
+export const metadata = { alternates: { canonical: "/" } };
 
 const QUALITIES: [LucideIcon, string, string][] = [
   [HeartHandshake, "Respect for Parents", "Walidain ki izzat ita’at aur shukr guzaari sikhaate hain."],

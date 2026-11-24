@@ -6,7 +6,7 @@ import { getCatalog, getSettings } from "@/lib/db";
 import { WHATSAPP, WHATSAPP_PRETTY } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Enroll — Abu Bakkar Academy" };
+export const metadata = { title: "Enroll — Abu Bakkar Academy", description: "Enroll your child in Character Grooming or Academic Tuition at Abu Bakkar Academy.", alternates: { canonical: "/enroll" } };
 
 export default async function EnrollPage({ searchParams }: { searchParams: { program?: string; type?: string; term?: string; for?: string } }) {
   const [c, settings] = await Promise.all([getCatalog(), getSettings()]);

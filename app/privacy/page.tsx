@@ -1,5 +1,5 @@
 import LegalPage from "@/components/LegalPage";
-export const metadata = { title: "Privacy Policy — Abu Bakkar Academy" };
+export const metadata = { title: "Privacy Policy — Abu Bakkar Academy", description: "How Abu Bakkar Academy collects, uses and protects parent and student information.", alternates: { canonical: "/privacy" } };
 
 export default function Privacy() {
   return (

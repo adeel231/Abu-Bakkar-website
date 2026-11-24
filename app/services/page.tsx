@@ -4,6 +4,7 @@ import ServiceShell from "@/components/ServiceShell";
 
 export const metadata = {
   title: "Our Services — Abu Bakkar Academy",
+  alternates: { canonical: "/services" },
   description: "Online Quran classes and online academic tutoring for Grades 1 to 10 at Abu Bakkar Academy.",
 };
 

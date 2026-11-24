@@ -2,7 +2,7 @@ import LegalPage from "@/components/LegalPage";
 import { getCatalog } from "@/lib/db";
 import { formatPKR, monthlyPackage, plan } from "@/lib/pricing";
 
-export const metadata = { title: "Refund Policy — Abu Bakkar Academy" };
+export const metadata = { title: "Refund Policy — Abu Bakkar Academy", description: "Refund, cancellation and make-up session rules for Abu Bakkar Academy programs.", alternates: { canonical: "/refund-policy" } };
 export const dynamic = "force-dynamic";
 
 export default async function Refund() {

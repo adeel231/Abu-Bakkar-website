@@ -1,5 +1,5 @@
 import LegalPage from "@/components/LegalPage";
-export const metadata = { title: "Terms — Abu Bakkar Academy" };
+export const metadata = { title: "Terms of Enrollment — Abu Bakkar Academy", description: "Terms of enrollment for Abu Bakkar Academy classes: payment, attendance and conduct.", alternates: { canonical: "/terms" } };
 
 export default function Terms() {
   return (
