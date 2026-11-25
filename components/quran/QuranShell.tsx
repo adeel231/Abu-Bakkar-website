@@ -25,7 +25,6 @@ export function RegionSelector({ current }: { current?: Region }) {
 export default function QuranShell({ children, region }: { children: React.ReactNode; region?: Region }) {
   return (
     <div className="bg-white text-navy">
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" />
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-1.5">
           <Logo />
