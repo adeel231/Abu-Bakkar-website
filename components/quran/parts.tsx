@@ -161,7 +161,8 @@ export function PricingTable({ region }: { region: Region }) {
           </div>
         ))}
       </div>
-      <div className="marquee mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 text-navy" aria-label="Billed monthly. Full amount and currency shown before you pay. Free assessment, no registration fee, 10% off each extra sibling. Weekly sessions, billed monthly. Launch prices, subject to approval.">
+      <div className="marquee mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 text-navy">
+        <p className="sr-only">{NOTES.join(". ")}.</p>
         <div className="marquee-track flex w-max" style={{ animationDuration: "90s" }} aria-hidden="true">
           {[0, 1].map((half) => (
             <ul key={half} className="flex shrink-0">
