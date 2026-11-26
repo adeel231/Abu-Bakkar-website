@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Footer from "@/components/Footer";
 import Tracker, { EnrollLink } from "@/components/Tracker";
 import { HandHeart, HeartHandshake, ShieldCheck, Hourglass, Landmark, Star, CalendarCheck, MessagesSquare, GraduationCap, TrendingUp, Sprout, Video, ClipboardList, type LucideIcon } from "lucide-react";
@@ -164,6 +165,20 @@ export default async function Home() {
               </li>
             ))}
           </ol>
+        </div>
+      </section>
+
+      {/* INTERNATIONAL QURAN CLASSES (internal link to the UK/USA section) */}
+      <section id="quran-international" className="bg-white text-navy">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-5 px-5 py-12 text-center md:flex-row md:justify-between md:text-left">
+          <div>
+            <h2 className="font-serif text-2xl font-bold md:text-3xl">Living in the UK or USA?</h2>
+            <p className="mt-2 text-slate-600">One-to-one <Link href="/quran" className="font-semibold text-[#0b5a3e] underline underline-offset-2">online Quran classes</Link> for kids and adults: Noorani Qaida, Nazra, Tajweed and Hifz.</p>
+          </div>
+          <div className="flex shrink-0 gap-3">
+            <Link href="/quran/uk" className="whitespace-nowrap rounded-full bg-[#0b5a3e] px-4 py-3 text-sm font-bold text-white hover:bg-[#094a33] sm:px-5 sm:text-base">Quran Classes UK</Link>
+            <Link href="/quran/usa" className="whitespace-nowrap rounded-full border-2 border-[#0b5a3e] px-4 py-3 text-sm font-bold sm:px-5 sm:text-base text-[#0b5a3e] hover:bg-[#0b5a3e] hover:text-white">Quran Classes USA</Link>
+          </div>
         </div>
       </section>
 
